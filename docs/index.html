@@ -1,0 +1,598 @@
+<!doctype html>
+<html lang="en-GB" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>RG-Present — church presentation software for Windows</title>
+    <meta
+      name="description"
+      content="RG-Present puts song words, scripture and slides on the projector during a live service. Free to download, built for Windows by RG Devs."
+    />
+    <link rel="icon" href="assets/icon-256.png" />
+    <meta name="theme-color" content="#0b0f14" />
+
+    <!--
+      No trackers, no analytics, no third-party requests of any kind. Everything
+      this page needs is served from the same repository, so it loads on a slow
+      mobile connection. Inter is subsetted to the characters used: 54 KB
+      instead of the 876 KB the full variable font would cost.
+    -->
+    <style>
+      @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 100 900;
+        font-display: swap;
+        src: url('assets/inter-subset.woff2') format('woff2');
+      }
+
+      /* The product's own design tokens. */
+      :root {
+        --base: #0b0f14;
+        --panel: #121924;
+        --raised: #18202d;
+        --subtle: #222c3a;
+        --strong: #53667f;
+        --primary: #e9eef5;
+        --secondary: #aab6c6;
+        --muted: #8996a8;
+        --accent: #6d4aff;
+        --accent-hover: #7d5eff;
+        --accent-text: #8f76ff;
+        --accent-soft: #1a1834;
+        --cue: #f5a524;
+        --cue-text: #ffc163;
+        --cue-soft: #2a1f0c;
+        --on-accent: #ffffff;
+
+        --radius-control: 6px;
+        --radius-panel: 10px;
+        --radius-dialog: 14px;
+
+        color-scheme: dark;
+      }
+
+      :root[data-theme='light'] {
+        --base: #f4f6f9;
+        --panel: #ffffff;
+        --raised: #ffffff;
+        --subtle: #dfe3ea;
+        --strong: #8896a9;
+        --primary: #0c1118;
+        --secondary: #495667;
+        --muted: #5b6878;
+        --accent: #6d4aff;
+        --accent-hover: #5b35f5;
+        --accent-text: #5a32f0;
+        --accent-soft: #eeeaff;
+        --cue: #c2650a;
+        --cue-text: #8a4708;
+        --cue-soft: #fdf1dd;
+        color-scheme: light;
+      }
+
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        background: var(--base);
+        color: var(--primary);
+        font-family: Inter, system-ui, -apple-system, 'Segoe UI', sans-serif;
+        font-size: 16px;
+        line-height: 1.6;
+        -webkit-font-smoothing: antialiased;
+      }
+
+      .wrap {
+        max-width: 60rem;
+        margin: 0 auto;
+        padding: 0 20px;
+      }
+
+      header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 20px 0;
+      }
+
+      header img {
+        height: 34px;
+        width: auto;
+      }
+
+      .theme-toggle {
+        margin-left: auto;
+        background: transparent;
+        border: 1px solid var(--subtle);
+        color: var(--secondary);
+        border-radius: var(--radius-control);
+        padding: 6px 12px;
+        font: inherit;
+        font-size: 13px;
+        cursor: pointer;
+      }
+      .theme-toggle:hover {
+        border-color: var(--strong);
+        color: var(--primary);
+      }
+
+      .hero {
+        padding: 40px 0 48px;
+        border-bottom: 1px solid var(--subtle);
+      }
+
+      h1 {
+        font-size: clamp(30px, 6vw, 46px);
+        line-height: 1.15;
+        letter-spacing: -0.02em;
+        margin: 0 0 12px;
+        font-weight: 650;
+      }
+
+      .lede {
+        font-size: clamp(17px, 2.6vw, 20px);
+        color: var(--secondary);
+        margin: 0 0 32px;
+        max-width: 38rem;
+      }
+
+      .download {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        background: var(--accent);
+        color: var(--on-accent);
+        text-decoration: none;
+        font-size: 18px;
+        font-weight: 600;
+        padding: 16px 28px;
+        border-radius: var(--radius-panel);
+        transition: background 160ms cubic-bezier(0.22, 1, 0.36, 1);
+      }
+      .download:hover {
+        background: var(--accent-hover);
+      }
+      .download:focus-visible {
+        outline: 2px solid var(--accent-text);
+        outline-offset: 3px;
+      }
+
+      .meta {
+        margin-top: 14px;
+        font-size: 14px;
+        color: var(--muted);
+        font-variant-numeric: tabular-nums;
+      }
+      .meta a {
+        color: var(--accent-text);
+      }
+
+      section {
+        padding: 40px 0;
+        border-bottom: 1px solid var(--subtle);
+      }
+      section:last-of-type {
+        border-bottom: 0;
+      }
+
+      h2 {
+        font-size: 13px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: var(--muted);
+        margin: 0 0 20px;
+        font-weight: 600;
+      }
+
+      .grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--subtle);
+        border-radius: var(--radius-panel);
+        padding: 20px;
+      }
+      .card h3 {
+        margin: 0 0 6px;
+        font-size: 15px;
+        font-weight: 600;
+      }
+      .card p {
+        margin: 0;
+        color: var(--secondary);
+        font-size: 15px;
+      }
+
+      ol.steps {
+        counter-reset: step;
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        gap: 14px;
+      }
+      ol.steps li {
+        counter-increment: step;
+        display: grid;
+        grid-template-columns: 30px 1fr;
+        gap: 14px;
+        align-items: start;
+        color: var(--secondary);
+      }
+      ol.steps li::before {
+        content: counter(step);
+        display: grid;
+        place-items: center;
+        width: 26px;
+        height: 26px;
+        border-radius: 999px;
+        background: var(--accent-soft);
+        color: var(--accent-text);
+        font-size: 13px;
+        font-weight: 600;
+      }
+      ol.steps strong {
+        color: var(--primary);
+        font-weight: 600;
+      }
+
+      .notice {
+        background: var(--cue-soft);
+        border: 1px solid var(--cue);
+        border-radius: var(--radius-panel);
+        padding: 20px;
+      }
+      .notice h3 {
+        margin: 0 0 8px;
+        font-size: 15px;
+        color: var(--cue-text);
+        font-weight: 600;
+      }
+      .notice p {
+        margin: 0 0 10px;
+        color: var(--secondary);
+        font-size: 15px;
+      }
+      .notice p:last-child {
+        margin-bottom: 0;
+      }
+
+      dl.support {
+        display: grid;
+        grid-template-columns: max-content 1fr;
+        gap: 6px 20px;
+        margin: 0;
+        font-size: 15px;
+      }
+      dt {
+        color: var(--muted);
+      }
+      dd {
+        margin: 0;
+      }
+      dd a {
+        color: var(--accent-text);
+      }
+
+      footer {
+        padding: 32px 0 48px;
+        color: var(--muted);
+        font-size: 14px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 20px;
+        align-items: center;
+      }
+      footer a {
+        color: var(--muted);
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        * {
+          transition-duration: 0.01ms !important;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="wrap">
+      <header>
+        <img id="logo" src="assets/logo-full-dark.svg" alt="RG-Present" />
+        <button class="theme-toggle" id="theme" type="button">Light</button>
+      </header>
+
+      <div class="hero">
+        <h1>Put the words on the screen, without the fuss.</h1>
+        <p class="lede">
+          RG-Present shows song words, scripture and slides on your projector during a live
+          service. It works offline, starts fast, and keeps your congregation looking at the
+          slide — never at your desktop.
+        </p>
+
+        <a class="download" id="download" href="#" rel="noopener">
+          <svg
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M12 3v12" />
+            <path d="m7 10 5 5 5-5" />
+            <path d="M5 21h14" />
+          </svg>
+          Download for Windows
+        </a>
+
+        <p class="meta" id="meta">Checking for the latest version…</p>
+      </div>
+
+      <section>
+        <h2>What you need</h2>
+        <div class="grid">
+          <div class="card">
+            <h3>Windows 10 or 11, 64-bit</h3>
+            <p>Any laptop from the last decade or so. RG-Present does not run on 32-bit Windows.</p>
+          </div>
+          <div class="card">
+            <h3>4 GB of memory</h3>
+            <p>
+              8 GB is more comfortable if you also run other software during the service. Built-in
+              Intel graphics are fine.
+            </p>
+          </div>
+          <div class="card">
+            <h3>A second screen</h3>
+            <p>
+              A projector or TV connected by HDMI, set to <strong>Extend</strong> rather than
+              Duplicate, so the congregation sees the slides and you keep your controls.
+            </p>
+          </div>
+          <div class="card">
+            <h3>About 400 MB of disk</h3>
+            <p>
+              Your songs, schedules and settings are kept separately, so updating never touches
+              them.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Installing</h2>
+        <ol class="steps">
+          <li>
+            <span
+              ><strong>Download the installer</strong> using the button above, and open it from
+              your Downloads folder.</span
+            >
+          </li>
+          <li>
+            <span
+              ><strong>Windows will warn you.</strong> Click <strong>More info</strong>, then
+              <strong>Run anyway</strong>. See the note below for why.</span
+            >
+          </li>
+          <li>
+            <span
+              ><strong>Choose where to install it</strong> — the default is right for almost
+              everyone — and wait about a minute.</span
+            >
+          </li>
+          <li>
+            <span
+              ><strong>Plug in the projector</strong> and press <strong>Windows</strong> +
+              <strong>P</strong>, then choose <strong>Extend</strong>.</span
+            >
+          </li>
+          <li>
+            <span
+              ><strong>Open RG-Present</strong>, pick the projector as the output screen, and press
+              <strong>Show</strong>.</span
+            >
+          </li>
+        </ol>
+      </section>
+
+      <section>
+        <h2>The Windows warning</h2>
+        <div class="notice">
+          <h3>“Windows protected your PC”</h3>
+          <p>
+            You will see this blue box the first time you run the installer. It does not mean
+            anything is wrong with the download — it means the installer is not yet signed with a
+            paid certificate, so Windows has not seen enough copies of it to recognise it.
+          </p>
+          <p>
+            Click <strong>More info</strong>, check that the publisher shows as
+            <strong>Unknown publisher</strong> and the file name matches the one you downloaded,
+            then click <strong>Run anyway</strong>.
+          </p>
+          <p>
+            We are working towards a signed installer, which will remove the warning. Until then,
+            only ever download RG-Present from this page.
+          </p>
+        </div>
+      </section>
+
+      <section>
+        <h2>Updating</h2>
+        <div class="grid">
+          <div class="card">
+            <h3>It updates itself</h3>
+            <p>
+              RG-Present checks for updates quietly in the background, and never during a service.
+              You will be asked to restart when it suits you.
+            </p>
+          </div>
+          <div class="card">
+            <h3>No internet at church?</h3>
+            <p>
+              Download the installer somewhere else, put it on a flash drive, and run it over the
+              top of the old version. Everything you have saved is kept.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Help</h2>
+        <dl class="support">
+          <dt>Email</dt>
+          <dd><a id="support-email" href="#">—</a></dd>
+          <dt>Phone</dt>
+          <dd id="support-phone">—</dd>
+          <dt>All versions</dt>
+          <dd><a id="all-releases" href="#" rel="noopener">Release history and older builds</a></dd>
+        </dl>
+      </section>
+
+      <footer>
+        <span>RG-Present is made by RG Devs in Kenya.</span>
+        <span id="copyright">© RG Devs</span>
+      </footer>
+    </div>
+
+    <script>
+      ;(function () {
+        'use strict'
+
+        // ------------------------------------------------------------------
+        // Support contacts. PLACEHOLDERS — replace with the real ones.
+        // This is the only place they are written down on this page.
+        // ------------------------------------------------------------------
+        var SUPPORT = {
+          email: 'support@example.invalid', // TODO: real RG Devs support address
+          phone: '+254 000 000 000' // TODO: real RG Devs support number
+        }
+
+        // The last version this page was built against. Used only if the
+        // GitHub API cannot be reached, so the page is never useless.
+        var FALLBACK_VERSION = null
+
+        var INSTALLER = 'RG-Present-Setup.exe'
+
+        /**
+         * Work out which repository this page belongs to from the URL it is
+         * served from, so transferring the repositories to an organisation
+         * needs no edit here at all.
+         *   kenrodgersutugi-tech.github.io/rg-present-releases/ -> owner/repo
+         */
+        function repository() {
+          var host = window.location.hostname
+          var segment = window.location.pathname.split('/').filter(Boolean)[0]
+          if (/\.github\.io$/.test(host) && segment) {
+            return { owner: host.replace(/\.github\.io$/, ''), repo: segment }
+          }
+          // Opened from a file or a custom domain: fall back to the repository
+          // this page was published from.
+          return { owner: 'kenrodgersutugi-tech', repo: 'rg-present-releases' }
+        }
+
+        var repo = repository()
+        var base = 'https://github.com/' + repo.owner + '/' + repo.repo
+
+        document.getElementById('download').href =
+          base + '/releases/latest/download/' + INSTALLER
+        document.getElementById('all-releases').href = base + '/releases'
+
+        var email = document.getElementById('support-email')
+        email.href = 'mailto:' + SUPPORT.email
+        email.textContent = SUPPORT.email
+        document.getElementById('support-phone').textContent = SUPPORT.phone
+
+        document.getElementById('copyright').textContent =
+          '© RG Devs ' + new Date().getFullYear()
+
+        // ------------------------------------------------------------------
+        // Theme
+        // ------------------------------------------------------------------
+        var root = document.documentElement
+        var toggle = document.getElementById('theme')
+        var logo = document.getElementById('logo')
+
+        function applyTheme(theme) {
+          root.setAttribute('data-theme', theme)
+          toggle.textContent = theme === 'dark' ? 'Light' : 'Dark'
+          logo.src = theme === 'dark' ? 'assets/logo-full-dark.svg' : 'assets/logo-full-light.svg'
+          try {
+            localStorage.setItem('rgp.site.theme', theme)
+          } catch (e) {
+            /* a theme we cannot remember is still a theme we can show */
+          }
+        }
+
+        var stored = null
+        try {
+          stored = localStorage.getItem('rgp.site.theme')
+        } catch (e) {
+          /* private mode */
+        }
+        applyTheme(
+          stored ||
+            (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches
+              ? 'light'
+              : 'dark')
+        )
+
+        toggle.addEventListener('click', function () {
+          applyTheme(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark')
+        })
+
+        // ------------------------------------------------------------------
+        // Latest version, from the GitHub API, with a graceful fallback
+        // ------------------------------------------------------------------
+        var meta = document.getElementById('meta')
+
+        function describe(version, published) {
+          var text = 'Version ' + version.replace(/^v/, '')
+          if (published) {
+            text +=
+              ' · released ' +
+              new Date(published).toLocaleDateString('en-GB', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+              })
+          }
+          return text + ' · Windows 10/11, 64-bit'
+        }
+
+        function fallback() {
+          meta.textContent = FALLBACK_VERSION
+            ? describe(FALLBACK_VERSION, null)
+            : 'Latest version for Windows 10/11, 64-bit.'
+        }
+
+        // `releases/latest` excludes drafts and pre-releases, which is exactly
+        // what we want: this page only ever offers a published stable build.
+        fetch('https://api.github.com/repos/' + repo.owner + '/' + repo.repo + '/releases/latest', {
+          headers: { Accept: 'application/vnd.github+json' }
+        })
+          .then(function (response) {
+            if (!response.ok) throw new Error(String(response.status))
+            return response.json()
+          })
+          .then(function (release) {
+            if (!release || !release.tag_name) throw new Error('no release')
+            meta.textContent = describe(release.tag_name, release.published_at)
+          })
+          .catch(fallback)
+      })()
+    </script>
+  </body>
+</html>
