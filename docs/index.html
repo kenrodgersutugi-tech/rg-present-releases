@@ -476,8 +476,10 @@
         // This is the only place they are written down on this page.
         // ------------------------------------------------------------------
         var SUPPORT = {
-          email: 'support@example.invalid', // TODO: real RG Devs support address
-          phone: '+254 000 000 000' // TODO: real RG Devs support number
+          email: 'rgdev.ke@gmail.com',
+          // No published support number yet. Leave null rather than printing a
+          // placeholder a church might actually try to ring.
+          phone: null
         }
 
         // The last version this page was built against. Used only if the
@@ -513,7 +515,15 @@
         var email = document.getElementById('support-email')
         email.href = 'mailto:' + SUPPORT.email
         email.textContent = SUPPORT.email
-        document.getElementById('support-phone').textContent = SUPPORT.phone
+
+        if (SUPPORT.phone) {
+          document.getElementById('support-phone').textContent = SUPPORT.phone
+        } else {
+          // Hide the row entirely, label included.
+          var phoneDd = document.getElementById('support-phone')
+          phoneDd.previousElementSibling.hidden = true
+          phoneDd.hidden = true
+        }
 
         document.getElementById('copyright').textContent =
           '© RG Devs ' + new Date().getFullYear()
