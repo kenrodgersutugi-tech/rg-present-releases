@@ -45,8 +45,8 @@ npm run dist
 - **Double-click a song, picture or video in the library to put it on the screen at once** — it does not
   have to be in the service. Use **Add to service**, Enter or drag it in to build the running order;
   in the Service panel, click an item to preview it and double-click to go live.
-- Songs that exist in both English and Kimeru show an **EN / KIM** switch in Preview, and **BOTH**
-  puts the two languages on one slide, one above the other.
+- Songs that exist in both English and Kimeru show an **EN / KIM** switch in Preview: a slide is
+  always in one language, and the switch moves the whole hymn to the other.
 - The audience output goes to the first non-primary screen (change it in Settings). With one screen it
   opens as a window and moves to the projector automatically when one is connected.
 - The slide fills whatever screen it lands on — 16:9, 16:10, 4:3 or ultrawide — and the Preview and Live

@@ -37,7 +37,7 @@ window.rg.on('output:render', (p) => {
   const state = p.cover === 'black' ? 'BLACK' : p.cover === 'logo' ? 'LOGO' : p.cover === 'clear' ? 'CLEAR' : p.mode === 'media' ? 'MEDIA' : 'LIVE';
   $('state').textContent = (p.label ? p.label + '  ·  ' : '') + state;
   $('state').className = state === 'LIVE' ? 'live' : '';
-  $('current').textContent = p.mode === 'slide' ? [p.text || '', p.text2 || ''].filter(Boolean).join('\n\n') : '';
+  $('current').textContent = p.mode === 'slide' ? p.text || '' : '';
   $('next').textContent = p.next || '';
   $('next').style.display = p.next ? '' : 'none';
   fit();

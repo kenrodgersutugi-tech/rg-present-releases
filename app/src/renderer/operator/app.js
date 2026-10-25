@@ -61,21 +61,9 @@
     if (item.type === 'song') {
       const song = await App.getSong(item.songId);
       if (!song) return { kind: 'song', title: `${item.title} (missing)`, slides: [], theme: App.themeFor(item.themeId) };
-      const slides = L.buildSlides(song, opts);
-      let secondTitle = '';
-      // Both languages on one slide: the linked hymn's verses are paired with this one's, verse by
-      // verse, and each half of the slide is fitted on its own.
-      if (item.secondSongId) {
-        const other = await App.getSong(item.secondSongId);
-        if (other) {
-          secondTitle = other.title;
-          const otherSlides = L.buildSlides(other, opts);
-          slides.forEach((sl, i) => { sl.text2 = otherSlides[i] ? otherSlides[i].text : ''; });
-        }
-      }
       return {
         kind: 'song', song, title: song.title, number: song.number, author: song.author, copyright: song.copyright,
-        secondTitle, slides, theme: App.themeFor(item.themeId || song.theme_id),
+        slides: L.buildSlides(song, opts), theme: App.themeFor(item.themeId || song.theme_id),
       };
     }
     if (item.type === 'custom') {
@@ -120,7 +108,6 @@
       until: s.countdown ? App.countdownUntil(s.countdown) : null,
       endText: s.countdown ? s.countdown.endText || '' : '',
       text: s.text || '',
-      text2: s.text2 || '',
       label: s.label || '',
       first: !!s.first,
       media: s.media ? { ...s.media, ...App.mediaPlayback } : null,
@@ -236,34 +223,16 @@
       const b = document.createElement('button');
       b.textContent = App.langLabel(s.language);
       b.title = s.title;
-      b.className = s.id === p.item.songId && !p.item.secondSongId ? 'on' : '';
+      b.className = s.id === p.item.songId ? 'on' : '';
       b.onclick = async () => {
         p.item.songId = s.id;
         p.item.title = s.title;
         p.item.language = s.language;
-        delete p.item.secondSongId;
         App.markDirty();
         await App.setPreview(p.item, p.index, p.slide);
       };
       box.appendChild(b);
     }
-    // Both languages at once, one above the other — for a congregation that sings in two.
-    const both = document.createElement('button');
-    both.textContent = 'BOTH';
-    both.title = 'Show both languages on each slide';
-    both.className = p.item.secondSongId ? 'on' : '';
-    both.onclick = async () => {
-      if (p.item.secondSongId) delete p.item.secondSongId;
-      else {
-        const other = linked.find((s) => s.id !== p.item.songId);
-        if (!other) return App.toast('This hymn has no linked translation', true);
-        p.item.secondSongId = other.id;
-      }
-      App.markDirty();
-      await App.setPreview(p.item, p.index, p.slide);
-      if (App.live && App.live.item === p.item) await App.refreshPreview();
-    };
-    box.appendChild(both);
     box.hidden = false;
   };
 

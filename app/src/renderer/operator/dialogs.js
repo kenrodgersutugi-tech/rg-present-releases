@@ -277,10 +277,10 @@
       const r = await App.resolve(item);
       const kind = { song: 'Hymn', scripture: 'Reading', custom: 'Text', countdown: 'Countdown', media: 'Media' }[item.type] || '';
       const head = `<h2><span class="n">${i + 1}</span>${esc(r.title)}${r.number ? ` <span class="num">No. ${esc(r.number)}</span>` : ''}<span class="kind">${esc(kind)}</span></h2>`;
-      const meta = [r.author, r.copyright, r.secondTitle && `with ${r.secondTitle}`].filter(Boolean).map(esc).join(' · ');
+      const meta = [r.author, r.copyright].filter(Boolean).map(esc).join(' · ');
       let body = '';
       if (item.type === 'song' && opts.words) {
-        body = r.slides.map((sl) => `<div class="v"><b>${esc(sl.code || sl.label || '')}</b><p>${esc(sl.text)}</p>${sl.text2 ? `<p class="second">${esc(sl.text2)}</p>` : ''}</div>`).join('');
+        body = r.slides.map((sl) => `<div class="v"><b>${esc(sl.code || sl.label || '')}</b><p>${esc(sl.text)}</p></div>`).join('');
       } else if (item.type === 'scripture' && opts.scripture) {
         body = `<p class="reading">${r.slides.map((sl) => esc(sl.text)).join(' ')}</p>`;
       } else if (item.type === 'custom') {
@@ -303,7 +303,6 @@
       .v { margin: 0 0 8px 28px; break-inside: avoid; }
       .v b { font-size: 9pt; letter-spacing: .08em; text-transform: uppercase; color: #888; }
       .v p, .reading { margin: 2px 0 0; white-space: pre-wrap; }
-      .v p.second { color: #555; margin-top: 4px; }
       .reading { margin-left: 28px; }
       footer { margin-top: 24px; border-top: 1px solid #ccc; padding-top: 6px; color: #888; font-size: 9pt; }
     </style></head><body>
