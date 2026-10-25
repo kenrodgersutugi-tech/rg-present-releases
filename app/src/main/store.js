@@ -60,6 +60,9 @@ const DEFAULT_SETTINGS = {
   // one click; clear it in Settings -> Updates and nothing is ever contacted.
   updateFeedUrl: 'https://github.com/kenrodgersutugi-tech/rg-present-releases/releases/latest/download/updates.json',
   autoCheckUpdates: true,
+  // Hands-off updating: song and Bible packs install themselves, and a new version of the program
+  // downloads quietly and installs when RG-Present is closed — never during a service.
+  autoInstallUpdates: true,
   lastUpdateCheckAt: null,
 };
 

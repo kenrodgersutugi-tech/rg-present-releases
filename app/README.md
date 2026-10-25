@@ -37,7 +37,9 @@ npm run dist
 | Ctrl+0 | Back to 100% text size |
 | Ctrl+F / Ctrl+S / Ctrl+O / Ctrl+N | Search / save / open / new service |
 
-- Double-click a song, or drag it into the Service panel. Click an item to preview it; double-click to go live.
+- **Double-click a song, picture or video in the library to put it on the screen at once** — it does not
+  have to be in the service. Use **Add to service**, Enter or drag it in to build the running order;
+  in the Service panel, click an item to preview it and double-click to go live.
 - Songs that exist in both English and Kimeru show an **EN / KIM** switch in Preview.
 - The audience output goes to the first non-primary screen (change it in Settings). With one screen it
   opens as a window and moves to the projector automatically when one is connected.
@@ -45,7 +47,10 @@ npm run dist
   monitors take the same shape, so nothing is cut off or left in black bars.
 - **A− / A+** beside the Live controls make the words on the audience screen bigger or smaller (70%–200%);
   the size is remembered, and is also under Settings → Slides.
-- **Stage** opens a musician-facing display: current slide, next slide, clock.
+- Give any item its **own background** — a photo or a looping video, with the words on top — with the
+  picture button in the Preview panel, or the picture button on a media card.
+- **Stage** opens a musician-facing display: current slide (one verse at a time, with its reference),
+  next slide, clock.
 - The current service autosaves on every change and comes back after a crash or power cut.
 
 ## What's in the library
@@ -98,6 +103,17 @@ contacted.
 
 **Publish an update** from the development machine:
 
+Publishing a new version is one command from `app/`:
+
+```bash
+npm run release 1.3.0 --notes "Fixed hymn 212"
+```
+
+It bumps the version, writes a changelog entry, tags `v1.3.0` and pushes; the GitHub build publishes
+the installer, the packs and `updates.json`, and every church computer picks it up on its own.
+
+By hand, or for a folder on the church network:
+
 ```bash
 npm run dist                         # build the installer
 npm run build-packs                  # rebuild content/*.rgpkg
@@ -122,6 +138,8 @@ See [PUBLISHING.md](PUBLISHING.md).
 Settings → Updates → paste the folder or URL. After that:
 
 - RG-Present checks quietly a few seconds after it starts (switch off with the checkbox).
+- **It updates itself**: packs install as soon as they are found, and a new version installs when the
+  program is closed — never mid-service. Turn that off under Settings → Updates to be asked instead.
 - Settings → Updates → **Check now** shows what is waiting, with release notes.
 - A program update downloads with a progress bar; **Install and restart** does the rest.
 - Song, theme and Bible pack updates install straight away — no restart, and **songs you have edited in

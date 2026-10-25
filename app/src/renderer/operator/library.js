@@ -54,7 +54,9 @@
       row.draggable = true;
       row.innerHTML = `<span class="n">${App.esc(s.number || '')}</span><span>${App.esc(s.title)}</span><span class="aka">${App.esc(s.alt_title || '')}</span><span class="fd">${App.esc(s.folder || '')}</span>`;
       row.addEventListener('click', () => select(i));
-      row.addEventListener('dblclick', () => App.addSong(s.id));
+      // Double-click puts the song on the screen at once, without adding it to the service;
+      // "Add to service", Enter and dragging are the ways to put it in the running order.
+      row.addEventListener('dblclick', () => App.goLiveNow({ type: 'song', songId: s.id, title: s.title, number: s.number, folder: s.folder, language: s.language }));
       row.addEventListener('dragstart', (e) => {
         e.dataTransfer.setData('application/x-rg-song', String(s.id));
         e.dataTransfer.effectAllowed = 'copy';
@@ -80,15 +82,18 @@
     const meta = [s.number && `No. ${s.number}`, s.author, s.alt_title && `English: ${s.alt_title}`, s.folder].filter(Boolean).map(App.esc).join(' · ');
     box.innerHTML = `<div class="actions">
         <button class="btn small primary" data-a="add"><i data-icon="plus"></i>Add to service</button>
+        <button class="btn small" data-a="live">Go live</button>
         <button class="btn small" data-a="edit"><i data-icon="edit"></i>Edit</button>
         <button class="btn small" data-a="preview">Preview</button>
       </div>
       <h3>${App.esc(s.title)}</h3><div class="meta">${meta}${s.tags.includes('proofread') ? ' · <span style="color:var(--gold)">needs proofreading</span>' : ''}</div>
       ${s.sections.map((x) => `<div class="sec ${x.type}"><b>${App.esc(x.label)}</b><p>${App.esc(x.text)}</p></div>`).join('')}`;
     RGIcons.hydrate(box);
+    const asItem = () => ({ type: 'song', songId: s.id, title: s.title, number: s.number, folder: s.folder, language: s.language });
     box.querySelector('[data-a="add"]').onclick = () => App.addSong(s.id);
+    box.querySelector('[data-a="live"]').onclick = () => App.goLiveNow(asItem());
     box.querySelector('[data-a="edit"]').onclick = () => Dialogs.editSong(s);
-    box.querySelector('[data-a="preview"]').onclick = () => App.setPreview({ type: 'song', songId: s.id, title: s.title, number: s.number, folder: s.folder, language: s.language }, null, 0);
+    box.querySelector('[data-a="preview"]').onclick = () => App.setPreview(asItem(), null, 0);
   };
 
   // ---------- media ----------
@@ -103,8 +108,15 @@
       card.draggable = true;
       const url = RGRender.mediaUrl(m.rel_path);
       card.innerHTML = (m.type === 'video' ? `<video class="thumb" src="${url}" muted preload="metadata"></video>` : `<img class="thumb" src="${url}" loading="lazy">`) +
-        `<div class="cap">${App.esc(m.name)}</div>` + (m.rel_path.startsWith('user/') ? '<button class="mini del" title="Remove"><i data-icon="trash"></i></button>' : '');
-      card.addEventListener('dblclick', () => App.addMediaItem(m));
+        `<div class="cap">${App.esc(m.name)}</div>` +
+        `<button class="mini bg" title="Use as the background of the item in Preview"><i data-icon="image"></i></button>` +
+        (m.rel_path.startsWith('user/') ? '<button class="mini del" title="Remove"><i data-icon="trash"></i></button>' : '');
+      // Double-click shows it on the audience screen at once; drag it into the service to keep it.
+      card.addEventListener('dblclick', () => App.goLiveNow({ type: 'media', title: m.name, rel: m.rel_path, mediaType: m.type }));
+      card.querySelector('.bg').onclick = (e) => {
+        e.stopPropagation();
+        App.setItemBackground(m);
+      };
       card.addEventListener('dragstart', (e) => e.dataTransfer.setData('application/x-rg-media', JSON.stringify(m)));
       const del = card.querySelector('.del');
       if (del) del.onclick = async (e) => {

@@ -31,6 +31,7 @@
     'add-media': () => Dialogs.addMedia(),
     'add-countdown': () => Dialogs.editCountdown(),
     'edit-preview': () => Dialogs.editPreview(),
+    'item-background': () => Dialogs.itemBackground(),
     'go-live': () => App.goLive(),
     prev: () => App.prev(),
     next: () => App.next(),
@@ -58,6 +59,14 @@
   rg.on('updates:outcome', (o) => {
     if (o.kind === 'updated') App.toast(`Updated to RG-Present ${o.to}`);
     else App.toast(`The update to ${o.to} did not finish — still running ${o.from}`, true);
+  });
+
+  // The quiet update run in the background reports what it did.
+  rg.on('updates:auto', (u) => {
+    if (u.kind === 'packs') App.toast(`Updated: ${u.names.join(', ')}`);
+    else if (u.kind === 'packs-available') App.toast(`${u.count} content update${u.count > 1 ? 's' : ''} available — Settings → Updates`);
+    else if (u.kind === 'app-available') App.toast(`RG-Present ${u.version} is available — Settings → Updates`);
+    else if (u.kind === 'app-ready') App.toast(`RG-Present ${u.version} downloaded — it installs when you close the program`);
   });
   rg.on('content:changed', () => { App.loadThemes(); Library.refresh(); });
 

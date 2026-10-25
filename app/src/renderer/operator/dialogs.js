@@ -200,6 +200,38 @@
     };
   };
 
+  // ---------- background for one item ----------
+  /**
+   * A picture or a looping video behind this item's words — a photo behind an announcement, a
+   * moving background behind a hymn. The theme's colours, text and overlay are untouched, and the
+   * item goes live the same way as any other.
+   */
+  Dialogs.itemBackground = async () => {
+    const p = App.preview;
+    if (!p) return App.toast('Choose an item in Preview first', true);
+    const items = await rg.invoke('media:list');
+    const cur = p.item.background ? p.item.background.url : '';
+    const d = modal({
+      title: `Background — ${p.item.title || 'item'}`,
+      body: `<div class="media-bar" style="padding:0 0 10px">
+          <button class="btn" data-import><i data-icon="plus"></i>Add files…</button>
+          <button class="btn" data-clear ${cur ? '' : 'disabled'}>Use the theme's own background</button>
+          <span class="muted">The words of the song, reading or announcement stay on top.</span>
+        </div>
+        <div class="media-grid" style="padding:0">${items.map((m, i) => `<div class="media-card ${m.rel_path === cur ? 'sel' : ''}" data-i="${i}" style="cursor:pointer">${m.type === 'video'
+          ? `<video class="thumb" src="${RGRender.mediaUrl(m.rel_path)}" muted preload="metadata"></video>`
+          : `<img class="thumb" src="${RGRender.mediaUrl(m.rel_path)}">`}<div class="cap">${esc(m.name)}</div></div>`).join('')
+        || '<p class="muted">No pictures or videos yet. Add some with the button above.</p>'}</div>`,
+    });
+    d.qa('.media-card').forEach((c) => (c.onclick = () => { d.close(); App.setItemBackground(items[+c.dataset.i]); }));
+    d.q('[data-clear]').onclick = () => { d.close(); App.setItemBackground(null); };
+    d.q('[data-import]').onclick = async () => {
+      const added = await rg.invoke('media:import');
+      d.close();
+      if (added.length) Dialogs.itemBackground();
+    };
+  };
+
   // ---------- themes ----------
   Dialogs.themes = async () => {
     await App.loadThemes();
@@ -581,6 +613,7 @@
           <input id="uFeed" value="${esc(st.feed)}" placeholder="https://example.org/rgpresent/updates.json   or   \\\\church-server\\rgpresent">
           <small>A web address, or a folder on your network holding <b>updates.json</b>. Leave empty to never check.</small></label>
         <label class="field check"><input type="checkbox" id="uAuto" ${st.autoCheck ? 'checked' : ''}> Check automatically when RG-Present starts</label>
+        <label class="field check"><input type="checkbox" id="uAutoInstall" ${st.autoInstall ? 'checked' : ''}> Install updates on their own — song and Bible packs straight away, a new version when the program is closed</label>
         <div class="field"><span>Installed</span><div>RG-Present <b>${esc(st.appVersion)}</b>${st.lastCheckedAt ? ` <span class="muted">· last checked ${new Date(st.lastCheckedAt).toLocaleString()}</span>` : ''}</div></div>
       </div>`);
 
@@ -597,7 +630,9 @@
           <div class="upd-card"><div class="upd-head"><b>RG-Present ${esc(st.pending.version)}</b><span class="badge-new">downloaded</span></div>
           ${st.pending.notes ? `<p class="upd-notes">${esc(st.pending.notes)}</p>` : ''}
           <div class="upd-actions"><button class="btn primary" data-install-app>Install and restart</button><button class="btn" data-discard>Discard</button></div>
-          <p class="muted">RG-Present will close, the installer will run, and your songs, Bibles and settings stay as they are.</p></div>`);
+          <p class="muted">${st.autoInstall
+            ? 'This installs on its own the next time you close RG-Present, so you can leave it. Installing now closes the program, runs the installer and reopens it.'
+            : 'RG-Present will close, the installer will run, and your songs, Bibles and settings stay as they are.'}</p></div>`);
       }
 
       if (found) {
@@ -642,8 +677,16 @@
       d.qa('button').forEach((b) => { if (!b.hasAttribute('data-close') && !b.hasAttribute('data-close-btn')) b.disabled = on; });
     };
 
-    const saveFeed = () => rg.invoke('settings:set', { updateFeedUrl: d.q('#uFeed').value.trim(), autoCheckUpdates: d.q('#uAuto').checked })
-      .then((s) => { App.settings = s; st.feed = s.updateFeedUrl; st.autoCheck = s.autoCheckUpdates; });
+    const saveFeed = () => rg.invoke('settings:set', {
+      updateFeedUrl: d.q('#uFeed').value.trim(),
+      autoCheckUpdates: d.q('#uAuto').checked,
+      autoInstallUpdates: d.q('#uAutoInstall').checked,
+    }).then((s) => {
+      App.settings = s;
+      st.feed = s.updateFeedUrl;
+      st.autoCheck = s.autoCheckUpdates;
+      st.autoInstall = s.autoInstallUpdates;
+    });
 
     const showProgress = (id, p) => {
       const row = d.q(`[data-prog="${CSS.escape(id)}"]`);
@@ -723,22 +766,16 @@
 
   const cleanErr = (e) => String(e && e.message || e).replace(/^Error invoking remote method '[^']+': (Error: )?/, '');
 
-  /** Quiet check at startup: only speaks up when something is actually waiting. */
+  /**
+   * At startup. The checking itself happens in the background a few seconds later and reports
+   * through `updates:auto`; this only mentions an update that is already downloaded and waiting.
+   */
   Dialogs.autoCheckUpdates = async () => {
     const st = await rg.invoke('updates:status');
-    if (st.pending) {
-      App.toast(`RG-Present ${st.pending.version} is downloaded and ready to install`);
-      return;
-    }
-    if (!st.feed || !st.autoCheck) return;
-    try {
-      const found = await rg.invoke('updates:check');
-      const n = (found.app ? 1 : 0) + found.packs.length;
-      if (!n) return;
-      App.toast(found.app ? `RG-Present ${found.app.version} is available — open Settings → Updates` : `${n} content update${n > 1 ? 's' : ''} available`);
-    } catch (_) {
-      // A server that is down must never interrupt a service.
-    }
+    if (!st.pending) return;
+    App.toast(st.autoInstall
+      ? `RG-Present ${st.pending.version} installs when you close the program`
+      : `RG-Present ${st.pending.version} is downloaded and ready to install`);
   };
 
   // ---------- open service ----------

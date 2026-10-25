@@ -31,7 +31,9 @@ window.rg.on('output:render', (p) => {
     $('next').style.display = p.text ? '' : 'none';
     return;
   }
-  $('title').textContent = (p.item && p.item.title) || 'RG-Present';
+  // Scripture: the slide's own reference, so the musicians see the verse that is on the wall
+  // ("Psalms 23:1"), not just the whole reading.
+  $('title').textContent = (p.item && (p.item.reference || p.item.title)) || 'RG-Present';
   const state = p.cover === 'black' ? 'BLACK' : p.cover === 'logo' ? 'LOGO' : p.cover === 'clear' ? 'CLEAR' : p.mode === 'media' ? 'MEDIA' : 'LIVE';
   $('state').textContent = (p.label ? p.label + '  ·  ' : '') + state;
   $('state').className = state === 'LIVE' ? 'live' : '';

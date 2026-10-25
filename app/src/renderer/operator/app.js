@@ -47,7 +47,14 @@
   };
 
   // ---------- resolving items to slides ----------
-  App.resolve = async (item) => {
+  /** An item can carry its own background picture or video, shown behind its words. */
+  App.themeWithBackground = (theme, item) => {
+    const bg = item && item.background;
+    if (!bg || !bg.url) return theme;
+    return { ...theme, background: { type: bg.type === 'video' ? 'video' : 'image', value: bg.url } };
+  };
+
+  const resolveItem = async (item) => {
     const opts = { maxLines: App.settings.maxLinesPerSlide, autoChorus: App.settings.autoChorus };
     if (item.type === 'song') {
       const song = await App.getSong(item.songId);
@@ -80,6 +87,14 @@
       return { kind: 'media', title: item.title, slides: [{ label: item.mediaType === 'video' ? 'Video' : 'Image', code: '', text: '', media: { type: item.mediaType, url: item.rel } }], theme: App.themeFor(item.themeId) };
     }
     return { kind: 'unknown', title: '?', slides: [], theme: App.themeFor() };
+  };
+
+  App.resolve = async (item) => {
+    const r = await resolveItem(item);
+    // A picture or video chosen for this item wins over the theme's own background; the words,
+    // the song or passage footer and the theme's overlay stay exactly as they are.
+    r.theme = App.themeWithBackground(r.theme, item);
+    return r;
   };
 
   App.payload = (r, i, extra) => {
@@ -147,6 +162,7 @@
     App.previewStage.show(App.payload(r, App.preview.slide, { transition: { type: 'cut' } }));
     App.renderSchedule();
     App.updateLangToggle();
+    App.updateBackgroundButton();
   };
 
   App.previewSlide = (i) => {
@@ -238,6 +254,33 @@
     App.sendLive();
     App.renderSchedule();
     App.restartAuto();
+  };
+
+  /**
+   * Put something on the screen at once without it joining the service — a song called out from
+   * the floor, an announcement, a picture. It is previewed as well, so the next slides are to hand.
+   */
+  App.goLiveNow = async (item) => {
+    await App.setPreview(item, null, 0);
+    await App.goLive(item, null, 0);
+    App.toast(`Live: ${item.title || 'slide'}`);
+  };
+
+  /** Give the item in Preview its own background picture or video (null puts the theme's back). */
+  App.setItemBackground = async (bg) => {
+    const p = App.preview;
+    if (!p) return App.toast('Choose an item in Preview first', true);
+    if (bg) p.item.background = { type: bg.type === 'video' ? 'video' : 'image', url: bg.rel_path || bg.url };
+    else delete p.item.background;
+    if (App.service.items.includes(p.item)) App.markDirty();
+    await App.refreshPreview();
+    App.updateBackgroundButton();
+    App.toast(bg ? `Background: ${bg.name || 'set'}` : 'Background cleared');
+  };
+
+  App.updateBackgroundButton = () => {
+    const b = $('#btnBackground');
+    if (b) b.classList.toggle('on', !!(App.preview && App.preview.item && App.preview.item.background));
   };
 
   App.liveSlide = (i) => {

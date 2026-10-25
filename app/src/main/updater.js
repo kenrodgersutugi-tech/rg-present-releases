@@ -337,6 +337,7 @@ function status() {
     packaged: app.isPackaged,
     feed: s.updateFeedUrl || '',
     autoCheck: !!s.autoCheckUpdates,
+    autoInstall: !!s.autoInstallUpdates,
     lastCheckedAt: s.lastUpdateCheckAt || null,
     pending: state && state.stage === 'downloaded' ? { version: state.to, notes: state.notes || '' } : null,
     lastOutcome: state && (state.stage === 'installed' || state.stage === 'failed')

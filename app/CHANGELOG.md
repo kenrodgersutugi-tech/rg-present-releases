@@ -5,6 +5,33 @@ App, database schema and content packs are versioned separately:
 - **Schema version**: `MIGRATIONS` in `src/main/db.js` (the library is backed up before every upgrade).
 - **Content pack versions**: each pack's `manifest.json`; see the pack's own `CHANGELOG.md`.
 
+## App 1.3.0 (2026-10-25)
+### Straight to the screen
+- **Double-click a song, a picture or a video in the library and it goes live at once**, without
+  joining the service — for the hymn called out from the floor or the notice handed over mid-service.
+  It is previewed at the same time, so the rest of its slides are to hand. "Add to service", Enter
+  and dragging still build the running order as before.
+- The song panel has a **Go live** button beside **Add to service**.
+
+### A picture or video behind the words
+- Any item can carry its **own background** — a photo or a looping video — with the words of the
+  song, reading or announcement still on top: the **picture button** in the Preview panel's corner,
+  or the picture button on a media card in the library. "Use the theme's own background" puts it back.
+- The background follows the item, so it is there whether the item is in the service or sent live
+  straight from the library.
+
+### Stage display
+- The musicians' stage display names the verse on the wall (**Psalms 23:1**) and, like the audience
+  screen, shows **one verse at a time**, with the next verse underneath.
+
+### Updating a church computer by itself
+- **Updates install themselves**: song, theme and Bible packs as soon as they are found, and a new
+  version of the program downloads quietly and installs **when RG-Present is closed** — never during
+  a service. Switch it off in **Settings → Updates**, and nothing is contacted at all if no update
+  source is set.
+- For whoever publishes: `npm run release 1.3.0` bumps the version, tags it and pushes, and the
+  build on GitHub does the rest.
+
 ## App 1.2.0 (2026-10-25)
 ### The audience screen
 - **Fills any screen.** The slide now takes the shape of the screen it is shown on, so a 4:3 or 16:10

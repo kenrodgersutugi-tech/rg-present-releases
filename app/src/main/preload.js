@@ -14,7 +14,7 @@ const INVOKE = new Set([
   'updates:install-pack', 'updates:rollback',
   'bible:list', 'bible:structure', 'bible:chapter', 'bible:passage', 'bible:search', 'bible:remove', 'bible:pick', 'bible:install-pending',
 ]);
-const EVENTS = new Set(['output:render', 'windows:state', 'updates:progress', 'updates:outcome', 'content:changed']);
+const EVENTS = new Set(['output:render', 'windows:state', 'updates:progress', 'updates:outcome', 'updates:auto', 'content:changed']);
 
 contextBridge.exposeInMainWorld('rg', {
   invoke(channel, ...args) {

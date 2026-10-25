@@ -1,7 +1,7 @@
 {
   "name": "rg-present",
   "productName": "RG-Present",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Worship presentation software for Windows — hymns, Bibles, themes and dual-screen output.",
   "main": "src/main/main.js",
   "author": {
@@ -17,7 +17,8 @@
     "parse-hymnal": "node tools/parse-wesleyan-ocr.js",
     "make-icons": "electron tools/make-icons.js",
     "parse-hymns": "node tools/parse-wesleyan-ocr.js && node tools/parse-gutenberg-hymnal.js content-src/otterbein-hymnal/source/pg16455.txt content-src/otterbein-hymnal/songs.json && node tools/parse-gutenberg-hymnal.js content-src/christian-hymn-book/source/pg46041.txt content-src/christian-hymn-book/songs.json",
-    "make-feed": "node tools/make-update-feed.js"
+    "make-feed": "node tools/make-update-feed.js",
+    "release": "node tools/release.js"
   },
   "build": {
     "appId": "org.rgpresent.app",

@@ -183,6 +183,67 @@ async function loadThemesIntoRenderer() {
   if (win.operator && !win.operator.isDestroyed()) win.operator.webContents.send('content:changed');
 }
 
+function tellOperator(channel, payload) {
+  if (win.operator && !win.operator.isDestroyed()) win.operator.webContents.send(channel, payload);
+}
+
+/**
+ * The quiet update run, a few seconds after startup: song, theme and Bible packs install
+ * themselves, and a new version of the program downloads in the background and is installed when
+ * RG-Present is next closed — so nobody has to remember to update a church computer, and no
+ * install ever interrupts a service. An unreachable server is ignored.
+ */
+async function autoUpdateRun() {
+  const s = store.loadSettings();
+  if (!s.updateFeedUrl || !s.autoCheckUpdates) return;
+  let found;
+  try {
+    found = await updater.check();
+    store.saveSettings({ lastUpdateCheckAt: new Date().toISOString() });
+  } catch (_) {
+    return; // a server that is down must never disturb the operator
+  }
+  if (s.autoInstallUpdates) {
+    const installed = [];
+    for (const p of found.packs) {
+      try {
+        await updater.installPackUpdate(p);
+        installed.push(p.name || p.id);
+      } catch (_) { /* a bad pack is reported when the operator opens Settings -> Updates */ }
+    }
+    if (installed.length) {
+      await loadThemesIntoRenderer();
+      tellOperator('updates:auto', { kind: 'packs', names: installed });
+    }
+  } else if (found.packs.length) {
+    tellOperator('updates:auto', { kind: 'packs-available', count: found.packs.length });
+  }
+
+  if (!found.app || found.app.blocked) return;
+  if (!s.autoInstallUpdates || !app.isPackaged) {
+    tellOperator('updates:auto', { kind: 'app-available', version: found.app.version });
+    return;
+  }
+  try {
+    await updater.downloadApp(found.app, (p) => sendUpdateProgress('app', p));
+    tellOperator('updates:auto', { kind: 'app-ready', version: found.app.version });
+  } catch (_) { /* try again at the next start */ }
+}
+
+/** A downloaded update is installed as RG-Present closes, so the next start is the new version. */
+let quitInstallDone = false;
+function installUpdateOnQuit() {
+  if (quitInstallDone) return;
+  quitInstallDone = true;
+  const s = store.loadSettings();
+  if (!s.autoInstallUpdates || !app.isPackaged) return;
+  const state = updater.readState();
+  if (!state || state.stage !== 'downloaded') return;
+  try {
+    updater.applyApp({ silent: true });
+  } catch (_) { /* keep the working version; the installer stays for next time */ }
+}
+
 function registerIpc() {
   handle('app:info', () => ({
     appVersion: app.getVersion(),
@@ -480,6 +541,9 @@ app.whenReady().then(async () => {
   if (s.outputEnabled) createPresentationWindow('output');
   if (s.stageEnabled) createPresentationWindow('stage');
 
+  // Last of all, and never in the way: the quiet update run.
+  setTimeout(() => autoUpdateRun(), 8000);
+
   const onDisplays = () => {
     notifyOperator();
     // A projector plugged in or removed mid-service: move the output to wherever it now belongs.
@@ -515,5 +579,8 @@ app.on('second-instance', () => {
   }
 });
 
-app.on('before-quit', () => db.flushNow());
+app.on('before-quit', () => {
+  db.flushNow();
+  installUpdateOnQuit();
+});
 app.on('window-all-closed', () => app.quit());

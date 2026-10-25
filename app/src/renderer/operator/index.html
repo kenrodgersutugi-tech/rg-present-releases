@@ -40,7 +40,7 @@
         </div>
       </div>
       <ol class="schedule" id="schedule"></ol>
-      <div class="empty-hint" id="scheduleEmpty">Drag songs here from the library,<br>or double-click a song to add it.</div>
+      <div class="empty-hint" id="scheduleEmpty">Drag songs here from the library, or use <b>Add to service</b>.<br>Double-clicking a song puts it straight on the audience screen.</div>
     </section>
     <div class="splitter v" data-split="schedule"></div>
 
@@ -51,6 +51,7 @@
         <span class="item-title" id="previewTitle"></span>
         <div class="head-actions">
           <div class="lang-toggle" id="langToggle" hidden></div>
+          <button class="mini" id="btnBackground" data-action="item-background" title="Background picture or video for this item"><i data-icon="image"></i></button>
           <button class="mini" data-action="edit-preview" title="Edit this item"><i data-icon="edit"></i></button>
         </div>
       </div>
@@ -131,7 +132,7 @@
         <aside class="song-peek" id="scripturePeek"></aside>
       </div>
       <div class="lib-body" data-body="media" hidden>
-        <div class="media-bar"><button class="btn" data-action="media-import"><i data-icon="plus"></i>Add images or videos</button><span class="muted">Double-click to add to the service. Use Themes to set a background.</span></div>
+        <div class="media-bar"><button class="btn" data-action="media-import"><i data-icon="plus"></i>Add images or videos</button><span class="muted">Double-click puts it on the screen · drag it into the service to keep it · the picture button makes it the background of the item in Preview.</span></div>
         <div class="media-grid" id="mediaGrid"></div>
       </div>
       <div class="lib-body" data-body="services" hidden>
