@@ -1,0 +1,104 @@
+# Installs a published RG-Present release on a clean Windows machine exactly as a church would,
+# starts it, photographs the screen and takes it apart again. Run it from the Actions tab after a
+# release, or with a tag to test an older one.
+name: Test installer
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag to test, e.g. v1.3.0 (blank = the latest release)'
+        required: false
+        type: string
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - name: Download the published installer
+        shell: pwsh
+        run: |
+          $tag = '${{ inputs.tag }}'
+          $base = "https://github.com/$env:GITHUB_REPOSITORY/releases"
+          $url = if ($tag) { "$base/download/$tag/RG-Present-Setup.exe" } else { "$base/latest/download/RG-Present-Setup.exe" }
+          Write-Host "Downloading $url"
+          Invoke-WebRequest -Uri $url -OutFile setup.exe
+          $f = Get-Item setup.exe
+          Write-Host ("Installer: {0:N1} MB" -f ($f.Length / 1MB))
+          if ($f.Length -lt 50MB) { throw 'The installer is far too small to be real.' }
+          Write-Host "Signature: $((Get-AuthenticodeSignature setup.exe).Status)"
+
+      - name: Install it silently, the way an update does
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath .\setup.exe -ArgumentList '/S' -PassThru
+          $p.WaitForExit(600000) | Out-Null
+          Write-Host "Installer exit code: $($p.ExitCode)"
+          $exe = "$env:LOCALAPPDATA\Programs\RG-Present\RG-Present.exe"
+          for ($i = 0; $i -lt 60 -and -not (Test-Path $exe); $i++) { Start-Sleep 2 }
+          if (-not (Test-Path $exe)) {
+            Get-ChildItem "$env:LOCALAPPDATA\Programs" -ErrorAction SilentlyContinue | Format-Table
+            throw 'RG-Present.exe is not where the installer should have put it.'
+          }
+          $v = (Get-Item $exe).VersionInfo
+          Write-Host "Installed: $($v.ProductName) $($v.ProductVersion) by $($v.CompanyName)"
+          $res = "$env:LOCALAPPDATA\Programs\RG-Present\resources\content"
+          Get-ChildItem $res | Select-Object Name, Length | Format-Table
+          if ((Get-ChildItem $res -Filter *.rgpkg).Count -lt 8) { throw 'The content packs did not ship with the installer.' }
+          "RG_EXE=$exe" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Start it and photograph the screen
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path shots | Out-Null
+          $p = Start-Process -FilePath $env:RG_EXE -PassThru
+          Start-Sleep -Seconds 50
+          if ($p.HasExited) { throw "RG-Present exited on its own with code $($p.ExitCode)." }
+          Add-Type -AssemblyName System.Windows.Forms, System.Drawing
+          $screen = [System.Windows.Forms.Screen]::PrimaryScreen.Bounds
+          $bmp = New-Object System.Drawing.Bitmap $screen.Width, $screen.Height
+          $g = [System.Drawing.Graphics]::FromImage($bmp)
+          $g.CopyFromScreen($screen.Location, [System.Drawing.Point]::Empty, $screen.Size)
+          $bmp.Save("$PWD\shots\desktop.png", [System.Drawing.Imaging.ImageFormat]::Png)
+          Get-Process RG-Present -ErrorAction SilentlyContinue |
+            Select-Object Id, ProcessName, MainWindowTitle, @{n='MB';e={[int]($_.WorkingSet64/1MB)}} | Format-Table
+          $titles = (Get-Process RG-Present | Where-Object { $_.MainWindowTitle }).MainWindowTitle
+          Write-Host "Windows open: $($titles -join ' | ')"
+          if (-not ($titles -match 'RG-Present')) { throw 'No RG-Present window appeared.' }
+
+      - name: Check what it wrote on this computer
+        shell: pwsh
+        run: |
+          $data = "$env:APPDATA\RG-Present\data"
+          if (-not (Test-Path $data)) { throw 'RG-Present did not create its data folder.' }
+          Get-ChildItem $data -Recurse -File | Select-Object FullName, Length | Format-Table -AutoSize
+          foreach ($f in @('library.sqlite', 'bibles.sqlite', 'settings.json')) {
+            $path = Join-Path $data $f
+            if (-not (Test-Path $path)) { throw "$f was not created on first run." }
+            if ((Get-Item $path).Length -lt 1024) { throw "$f is suspiciously empty." }
+          }
+          $settings = Get-Content (Join-Path $data 'settings.json') -Raw | ConvertFrom-Json
+          Write-Host "Update source: $($settings.updateFeedUrl)"
+          Write-Host "Auto install:  $($settings.autoInstallUpdates)"
+          Write-Host "Verses/slide:  $($settings.scriptureVersesPerSlide)"
+          Write-Host "Library: {0:N1} MB" -f ((Get-Item (Join-Path $data 'library.sqlite')).Length / 1MB)
+
+      - name: Close it and uninstall
+        shell: pwsh
+        run: |
+          Stop-Process -Name RG-Present -Force -ErrorAction SilentlyContinue
+          Start-Sleep 5
+          $un = "$env:LOCALAPPDATA\Programs\RG-Present\Uninstall RG-Present.exe"
+          if (Test-Path $un) {
+            $p = Start-Process -FilePath $un -ArgumentList '/S' -PassThru
+            $p.WaitForExit(300000) | Out-Null
+            Start-Sleep 10
+            if (Test-Path "$env:LOCALAPPDATA\Programs\RG-Present\RG-Present.exe") { Write-Host '::warning::The uninstaller left the program behind.' }
+            else { Write-Host 'Uninstalled cleanly.' }
+          } else { Write-Host '::warning::No uninstaller was installed.' }
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: installer-test-screenshots
+          path: shots
