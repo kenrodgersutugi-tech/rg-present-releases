@@ -200,6 +200,132 @@
     };
   };
 
+  // ---------- message across the screen ----------
+  /**
+   * "Will the owner of KBX 123 please see the usher." The message goes over whatever is live —
+   * song, reading, black screen — and comes down on its own, or when the Message button is pressed
+   * again. The last few are kept, because the same ones come round most Sundays.
+   */
+  Dialogs.alert = () => {
+    const s = App.settings;
+    const recent = s.alertRecent || [];
+    const d = modal({
+      title: 'Message across the screen', narrow: true,
+      body: `<div class="form-grid">
+          <label class="field full"><span>Message</span><textarea id="aText" rows="3" placeholder="Will the owner of KBX 123 please move the car."></textarea></label>
+          <label class="field"><span>Where</span><select id="aPos"><option value="bottom" ${s.alertPosition !== 'top' ? 'selected' : ''}>Across the bottom</option><option value="top" ${s.alertPosition === 'top' ? 'selected' : ''}>Across the top</option></select></label>
+          <label class="field"><span>Take it down after</span><select id="aSecs">${[0, 10, 20, 30, 60, 120].map((n) => `<option value="${n}" ${(s.alertSeconds ?? 20) === n ? 'selected' : ''}>${n ? `${n} seconds` : 'Leave it up'}</option>`).join('')}</select></label>
+          <label class="field"><span>Size</span><select id="aSize">${[[44, 'Normal'], [56, 'Large'], [72, 'Extra large']].map(([n, l]) => `<option value="${n}" ${(s.alertSize || 56) === n ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+        </div>
+        ${recent.length ? `<div class="section-title">Used before</div><div class="alert-recent">${recent.map((x, i) => `<button class="btn small" data-recent="${i}">${esc(x)}</button>`).join('')}</div>` : ''}`,
+      footer: '<button class="btn" data-cancel>Cancel</button><button class="btn primary" data-show>Put it on the screen</button>',
+    });
+    const show = () => {
+      const text = d.q('#aText').value.trim();
+      if (!text) return d.q('#aText').focus();
+      const opts = { position: d.q('#aPos').value, size: +d.q('#aSize').value, seconds: +d.q('#aSecs').value };
+      rg.invoke('settings:set', { alertPosition: opts.position, alertSize: opts.size, alertSeconds: opts.seconds })
+        .then((st) => { App.settings = st; });
+      d.close();
+      App.showAlert(text, opts);
+    };
+    d.qa('[data-recent]').forEach((b) => (b.onclick = () => { d.q('#aText').value = recent[+b.dataset.recent]; d.q('#aText').focus(); }));
+    d.q('#aText').focus();
+    d.q('#aText').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); show(); }
+    });
+    d.q('[data-cancel]').onclick = () => d.close();
+    d.q('[data-show]').onclick = show;
+  };
+
+  // ---------- quick find ----------
+  /**
+   * Ctrl+K: one box for everything — a hymn number, a title, a line of a song, a reference like
+   * "Jn 3:16", a picture. Enter previews it, Shift+Enter puts it straight on the screen. For the
+   * moment in a service when somebody calls out a hymn and the operator has one hand free.
+   */
+  Dialogs.quickFind = () => {
+    if (document.querySelector('.modal')) return;
+    const B = window.RGBible;
+    const d = modal({
+      title: 'Find and show', narrow: true,
+      body: `<input id="qfInput" class="qf-input" placeholder="Hymn number, title, a line, or John 3:16…" autocomplete="off" spellcheck="false">
+        <div class="qf-results" id="qfResults"></div>
+        <p class="muted" style="margin:8px 2px 0">Enter previews · Shift+Enter puts it straight on the screen · Esc closes</p>`,
+    });
+    let rows = [];
+    let sel = 0;
+    const box = d.q('#qfResults');
+
+    const render = () => {
+      box.innerHTML = rows.length
+        ? rows.map((r, i) => `<div class="qf-row ${i === sel ? 'sel' : ''}" data-i="${i}"><i data-icon="${r.icon}"></i><b>${esc(r.title)}</b><span class="muted">${esc(r.sub || '')}</span></div>`).join('')
+        : '<p class="muted" style="padding:10px 2px">Nothing yet — start typing.</p>';
+      RGIcons.hydrate(box);
+      box.querySelectorAll('.qf-row').forEach((row) => {
+        row.onclick = () => { sel = +row.dataset.i; choose(false); };
+        row.ondblclick = () => { sel = +row.dataset.i; choose(true); };
+      });
+      const cur = box.querySelector('.qf-row.sel');
+      if (cur) cur.scrollIntoView({ block: 'nearest' });
+    };
+
+    const choose = async (live) => {
+      const r = rows[sel];
+      if (!r) return;
+      d.close();
+      if (live) await App.goLiveNow(r.item);
+      else await App.setPreview(r.item, null, 0);
+    };
+
+    let seq = 0;
+    const search = async () => {
+      const q = d.q('#qfInput').value.trim();
+      const mine = ++seq;
+      if (!q) { rows = []; sel = 0; return render(); }
+      const out = [];
+      const ref = B.parseReference(q);
+      if (ref && /\d/.test(q)) {
+        const bible = (await rg.invoke('bible:list'))[0];
+        if (bible) {
+          out.push({
+            icon: 'book', title: B.formatReference(ref), sub: `Reading · ${bible.abbrev}`,
+            item: { type: 'scripture', bibleId: bible.id, abbrev: bible.abbrev, ref, title: B.formatReference(ref) },
+          });
+        }
+      }
+      const songs = await rg.invoke('songs:search', { q, limit: 12 });
+      for (const s of songs) {
+        out.push({
+          icon: 'music', title: s.title, sub: [s.number && `No. ${s.number}`, s.folder].filter(Boolean).join(' · '),
+          item: { type: 'song', songId: s.id, title: s.title, number: s.number, folder: s.folder, language: s.language },
+        });
+      }
+      const media = (await rg.invoke('media:list')).filter((m) => m.name.toLowerCase().includes(q.toLowerCase())).slice(0, 5);
+      for (const m of media) {
+        out.push({
+          icon: m.type === 'video' ? 'video' : 'image', title: m.name, sub: m.type === 'video' ? 'Video' : 'Picture',
+          item: { type: 'media', title: m.name, rel: m.rel_path, mediaType: m.type },
+        });
+      }
+      if (mine !== seq) return;
+      rows = out;
+      sel = 0;
+      render();
+    };
+
+    let t;
+    const input = d.q('#qfInput');
+    input.addEventListener('input', () => { clearTimeout(t); t = setTimeout(search, 120); });
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowDown') { e.preventDefault(); sel = Math.min(sel + 1, rows.length - 1); render(); }
+      else if (e.key === 'ArrowUp') { e.preventDefault(); sel = Math.max(sel - 1, 0); render(); }
+      else if (e.key === 'Enter') { e.preventDefault(); choose(e.shiftKey); }
+    });
+    input.focus();
+    render();
+  };
+
   // ---------- background for one item ----------
   /**
    * A picture or a looping video behind this item's words — a photo behind an announcement, a
@@ -365,6 +491,7 @@
           <label class="field"><span>Scripture theme</span><select data-k="scriptureThemeId">${themeOptions(s.scriptureThemeId, true)}</select></label>
           <label class="field"><span>Verses per slide</span><select data-k="scriptureVersesPerSlide">${[[1, 'One verse at a time'], [2, 'Two verses'], [3, 'Three verses'], [4, 'Four verses'], [0, 'As many as the slide holds']].map(([n, label]) => `<option value="${n}" ${(s.scriptureVersesPerSlide ?? 1) === n ? 'selected' : ''}>${label}</option>`).join('')}</select><small>A reading goes live one verse at a time unless you change this.</small></label>
           <label class="field"><span>Text per slide (characters)</span><input type="number" min="80" max="1200" step="20" data-k="scriptureMaxChars" value="${s.scriptureMaxChars}"><small>Used by “as many as the slide holds”; whole verses stay together.</small></label>
+          <label class="field"><span>Reference size on screen</span><select data-k="scriptureRefSize">${[[40, 'Normal'], [54, 'Large'], [68, 'Extra large'], [84, 'Huge']].map(([n, l]) => `<option value="${n}" ${(s.scriptureRefSize || 54) === n ? 'selected' : ''}>${l}</option>`).join('')}</select><small>So the back row can see where a reading comes from.</small></label>
           <label class="field check"><input type="checkbox" data-k="scriptureVerseNumbers" ${s.scriptureVerseNumbers ? 'checked' : ''}> Show verse numbers</label>
         </div>
         <div class="section-title">Language</div>
@@ -430,6 +557,7 @@
         scriptureThemeId: v('scriptureThemeId').value || null,
         scriptureVersesPerSlide: Math.max(0, +v('scriptureVersesPerSlide').value || 0),
         scriptureMaxChars: Math.max(80, +v('scriptureMaxChars').value || 320),
+        scriptureRefSize: Math.max(20, +v('scriptureRefSize').value || 54),
         scriptureVerseNumbers: v('scriptureVerseNumbers').checked,
       });
       d.close();

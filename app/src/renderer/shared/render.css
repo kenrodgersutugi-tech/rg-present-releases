@@ -11,4 +11,11 @@
 .rg-box { position: absolute; display: flex; overflow: hidden; }
 .rg-text { white-space: pre-wrap; overflow-wrap: break-word; max-width: 100%; font-kerning: normal; text-rendering: optimizeLegibility; }
 .rg-band { position: absolute; }
-.rg-footer { position: absolute; left: 5%; right: 5%; bottom: 3.2%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: .02em; }
+.rg-footer { position: absolute; left: 5%; right: 5%; bottom: calc(3.2% + var(--rg-alert-lift, 0px)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: .02em; }
+.rg-alert {
+  position: absolute; left: 0; right: 0; padding: 28px 5%; text-align: center; font-weight: 700;
+  line-height: 1.2; white-space: pre-wrap; overflow-wrap: break-word; letter-spacing: .01em;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, .55);
+}
+.rg-alert-bottom { bottom: 0; }
+.rg-alert-top { top: 0; }

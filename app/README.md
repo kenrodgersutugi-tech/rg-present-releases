@@ -35,6 +35,9 @@ npm run dist
 | Esc | Remove black/clear/logo |
 | + / − (or Ctrl+= / Ctrl+−) | Bigger / smaller words on the audience screen |
 | Ctrl+0 | Back to 100% text size |
+| Ctrl+K | Find and show: hymn number, title, a line, or a reference. Enter previews, Shift+Enter goes live |
+| Ctrl+M | Put a message across the screen, or take it down |
+| K / M | Pause a video / turn its sound on and off |
 | Ctrl+F / Ctrl+S / Ctrl+O / Ctrl+N | Search / save / open / new service |
 
 - **Double-click a song, picture or video in the library to put it on the screen at once** — it does not
@@ -51,6 +54,10 @@ npm run dist
   picture button in the Preview panel, or the picture button on a media card.
 - **Stage** opens a musician-facing display: current slide (one verse at a time, with its reference),
   next slide, clock.
+- **Message** puts a line across the audience screen over whatever is live — a nursery call, a car to
+  be moved — at the top or the bottom, for as long as you choose. The reading's reference and the
+  song's name move up out of its way.
+- A video in the service can be **paused, heard and played once instead of looping**.
 - The current service autosaves on every change and comes back after a crash or power cut.
 
 ## What's in the library
@@ -75,7 +82,8 @@ The **Scripture** tab has a book/chapter browser, a reference box and a whole-Bi
 - Click a verse to select it, Shift+click for a range, then **Add to service** (or press Enter in the box).
 - Drag down the verse list to take a range; double-tap a verse to put it straight on the screen.
 - A reading goes live **one verse at a time**; change that under Settings → Scripture → *Verses per slide*.
-  The reference is always shown on screen.
+- The reference is always on screen, large enough to read from the back; four sizes under
+  Settings → Scripture.
 - Switch a passage between translations from the Preview panel.
 
 ### Adding another translation

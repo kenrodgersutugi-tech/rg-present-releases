@@ -14,6 +14,8 @@
     live: null,
     cover: null,
     auto: { on: false, timer: null },
+    alert: null,                                  // the message currently across the screen
+    mediaPlayback: { sound: false, paused: false, loop: true },
     songCache: new Map(),
     $, $$,
   };
@@ -108,11 +110,12 @@
       text: s.text || '',
       label: s.label || '',
       first: !!s.first,
-      media: s.media || null,
+      media: s.media ? { ...s.media, ...App.mediaPlayback } : null,
       item: { title: r.title, number: r.number, author: r.author, copyright: r.copyright, kind: r.kind, reference: s.reference, abbrev: r.abbrev },
       theme: r.theme,
       logoUrl: App.settings.logoMedia,
       textScale: App.settings.textScale || 1,
+      refSize: App.settings.scriptureRefSize || 54,
       fontFallback: App.settings.fontFallback,
       transition: { type: t.type || 'fade', ms: t.ms || 450 },
       next: next ? next.text || next.label : '',
@@ -283,6 +286,72 @@
     if (b) b.classList.toggle('on', !!(App.preview && App.preview.item && App.preview.item.background));
   };
 
+  // ---------- on-screen messages ----------
+  /**
+   * A line across the audience screen over whatever is live — a nursery call, a car to be moved.
+   * It stays up while the operator carries on with the service, and comes down on its own after
+   * the number of seconds set in Settings (0 = until it is taken down).
+   */
+  App.showAlert = (text, opts) => {
+    const msg = String(text || '').trim();
+    clearTimeout(App._alertTimer);
+    if (!msg) return App.clearAlert();
+    App.alert = {
+      text: msg,
+      position: (opts && opts.position) || App.settings.alertPosition || 'bottom',
+      size: (opts && opts.size) || App.settings.alertSize || 56,
+    };
+    App.sendLive();
+    App.updateAlertButton();
+    const secs = opts && opts.seconds != null ? opts.seconds : App.settings.alertSeconds;
+    if (secs > 0) App._alertTimer = setTimeout(() => App.clearAlert(), secs * 1000);
+    // Keep the last few messages: the same ones come round most Sundays.
+    const recent = [msg, ...(App.settings.alertRecent || []).filter((x) => x !== msg)].slice(0, 8);
+    App.settings.alertRecent = recent;
+    rg.invoke('settings:set', { alertRecent: recent });
+  };
+
+  App.clearAlert = () => {
+    clearTimeout(App._alertTimer);
+    App.alert = null;
+    App.sendLive();
+    App.updateAlertButton();
+  };
+
+  App.toggleAlert = () => (App.alert ? App.clearAlert() : Dialogs.alert());
+
+  App.updateAlertButton = () => {
+    const b = $('#btnAlert');
+    if (b) {
+      b.classList.toggle('on', !!App.alert);
+      b.title = App.alert ? 'Take the message off the screen (Ctrl+M)' : 'Put a message across the screen (Ctrl+M)';
+    }
+  };
+
+  // ---------- video playback ----------
+  App.liveVideo = () => {
+    const s = App.live && App.live.r.slides[App.live.slide];
+    return s && s.media && s.media.type === 'video' ? s.media : null;
+  };
+
+  App.setMediaPlayback = (patch) => {
+    App.mediaPlayback = { ...App.mediaPlayback, ...patch };
+    App.sendLive();
+    App.updateMediaButtons();
+  };
+
+  App.updateMediaButtons = () => {
+    const bar = $('#videoControls');
+    if (!bar) return;
+    const v = App.liveVideo();
+    bar.hidden = !v;
+    if (!v) return;
+    $('#btnVideoPlay').innerHTML = App.mediaPlayback.paused ? '▶' : '❚❚';
+    $('#btnVideoPlay').title = App.mediaPlayback.paused ? 'Play the video (K)' : 'Pause the video (K)';
+    $('#btnVideoSound').classList.toggle('on', !!App.mediaPlayback.sound);
+    $('#btnVideoLoop').classList.toggle('on', App.mediaPlayback.loop !== false);
+  };
+
   App.liveSlide = (i) => {
     if (!App.live) return;
     App.live.slide = Math.max(0, Math.min(i, App.live.r.slides.length - 1));
@@ -295,11 +364,13 @@
     const t = $('#transitionSelect').value;
     const base = App.settings.transition || {};
     const transition = t === 'cut' ? { type: 'cut', ms: 0 } : { type: 'fade', ms: t === 'slow' ? 1200 : base.ms || 450 };
+    // The message rides on the live picture only — not on the preview or the slide thumbnails.
     const p = App.live
-      ? App.payload(App.live.r, App.live.slide, { cover: App.cover, transition })
-      : { mode: 'blank', cover: App.cover || 'black', transition, logoUrl: App.settings.logoMedia };
+      ? App.payload(App.live.r, App.live.slide, { cover: App.cover, transition, alert: App.alert })
+      : { mode: 'blank', cover: App.cover || 'black', transition, logoUrl: App.settings.logoMedia, alert: App.alert };
     rg.sendOutput(p);
     App.liveStage.show(p);
+    App.updateMediaButtons();
     ['black', 'clear', 'logo'].forEach((c) => $('#btn' + c[0].toUpperCase() + c.slice(1)).classList.toggle('on', App.cover === c));
   };
 
@@ -584,6 +655,8 @@
       if (e.ctrlKey && (e.key === '+' || e.key === '=')) { e.preventDefault(); return App.nudgeTextScale(1); }
       if (e.ctrlKey && (e.key === '-' || e.key === '_')) { e.preventDefault(); return App.nudgeTextScale(-1); }
       if (e.ctrlKey && e.key === '0') { e.preventDefault(); return App.setTextScale(1); }
+      if (e.ctrlKey && e.key.toLowerCase() === 'k') { e.preventDefault(); return Dialogs.quickFind(); }
+      if (e.ctrlKey && e.key.toLowerCase() === 'm') { e.preventDefault(); return App.toggleAlert(); }
       if (modal || inField) {
         if (inField && e.key === 'Escape') e.target.blur();
         return;
@@ -596,6 +669,8 @@
         case 'c': case 'C': App.setCover('clear'); break;
         case 'l': case 'L': App.setCover('logo'); break;
         case 'r': case 'R': App.jumpToChorus(); break;
+        case 'k': case 'K': if (App.liveVideo()) App.setMediaPlayback({ paused: !App.mediaPlayback.paused }); break;
+        case 'm': case 'M': if (App.liveVideo()) App.setMediaPlayback({ sound: !App.mediaPlayback.sound }); break;
         case '+': case '=': App.nudgeTextScale(1); break;
         case '-': case '_': App.nudgeTextScale(-1); break;
         case 'Escape': App.cover = null; App.sendLive(); break;

@@ -53,6 +53,7 @@ const DEFAULT_SETTINGS = {
   outputResolution: { width: 1920, height: 1080 },
   defaultBibleId: 'kjv',
   scriptureVersesPerSlide: 1, // one verse on screen at a time; 0 = fit as many as the slide holds
+  scriptureRefSize: 54, // how big the reference is on the audience screen (stage pixels of 1080)
   scriptureMaxChars: 320, // characters of Bible text per slide when fitting (whole verses stay together)
   scriptureVerseNumbers: true,
   // Updates: a URL or a folder on a network share holding updates.json. Empty = never check.
@@ -63,6 +64,11 @@ const DEFAULT_SETTINGS = {
   // Hands-off updating: song and Bible packs install themselves, and a new version of the program
   // downloads quietly and installs when RG-Present is closed — never during a service.
   autoInstallUpdates: true,
+  // On-screen messages ("alerts"): a bar over whatever is live, for nursery and car-park calls.
+  alertSize: 56,
+  alertPosition: 'bottom',
+  alertSeconds: 20, // how long an alert stays up on its own; 0 = until it is taken down by hand
+  alertRecent: [],
   lastUpdateCheckAt: null,
 };
 

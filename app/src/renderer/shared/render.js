@@ -43,7 +43,7 @@
   function buildBackground(p) {
     const layer = el('div', 'rg-layer rg-bg');
     if (p.mode === 'media' && p.media) {
-      addMedia(layer, p.media.type, mediaUrl(p.media.url), 'contain');
+      addMedia(layer, p.media.type, mediaUrl(p.media.url), p.media.fill ? 'cover' : 'contain', p.media);
       return layer;
     }
     const b = (p.theme && p.theme.background) || { type: 'color', value: '#000' };
@@ -53,16 +53,19 @@
     return layer;
   }
 
-  function addMedia(parent, type, url, fit) {
+  function addMedia(parent, type, url, fit, opts) {
     if (type === 'video') {
+      const o = opts || {};
       const v = el('video', 'rg-fill rg-media', parent);
       v.src = url;
-      v.muted = true;
-      v.loop = true;
-      v.autoplay = true;
+      // A background video is silent and loops; a video the operator put in the service can be
+      // heard and can be paused, which is what a church playing a film clip needs.
+      v.muted = !o.sound;
+      v.loop = o.loop !== false;
+      v.autoplay = !o.paused;
       v.playsInline = true;
       v.style.objectFit = fit;
-      v.play().catch(() => {});
+      if (!o.paused) v.play().catch(() => {});
     } else {
       const i = el('img', 'rg-fill rg-media', parent);
       i.src = url;
@@ -140,7 +143,10 @@
       // Scripture always shows its reference: people look for it.
       const ft = el('div', 'rg-footer rg-ref', layer);
       ft.textContent = p.item.reference + (p.item.abbrev ? `  ·  ${p.item.abbrev}` : '');
-      ft.style.cssText = `font-size:${Math.round(Math.max(30, (footer.size || 26) + 8) * zoom)}px;color:${footer.color || 'rgba(255,255,255,.75)'};font-family:${family};text-align:${t.align === 'left' ? 'left' : 'center'};font-weight:600`;
+      // Big and bright: from the back of the church people want to see where a reading comes from.
+      ft.style.cssText = `font-size:${Math.round((p.refSize || 54) * zoom)}px;color:${footer.color || 'rgba(255,255,255,.92)'};` +
+        `font-family:${family};text-align:${t.align === 'left' ? 'left' : 'center'};font-weight:700;letter-spacing:.01em;` +
+        'text-shadow:0 3px 14px rgba(0,0,0,.6),0 1px 3px rgba(0,0,0,.8);';
     } else if (footer.show && p.item && p.item.kind === 'song') {
       const ft = el('div', 'rg-footer', layer);
       ft.textContent = (footer.template || '{title}')
@@ -177,6 +183,30 @@
     text.style.fontSize = best + 'px';
   }
 
+  /**
+   * A message across the screen — "the owner of KBX 123 please see the usher", a nursery call —
+   * shown over whatever is live, including a black or logo screen, and taken away without
+   * disturbing the slide underneath.
+   */
+  function alertLayer(a, family) {
+    const layer = el('div', 'rg-layer rg-alert-layer');
+    if (!a || !a.text) return layer;
+    const bar = el('div', `rg-alert rg-alert-${a.position === 'top' ? 'top' : 'bottom'}`, layer);
+    bar.textContent = a.text;
+    bar.style.cssText += `background:${a.background || 'rgba(8,10,16,.82)'};color:${a.color || '#fff'};` +
+      `font-size:${Math.round(a.size || 56)}px;font-family:${family};`;
+    return layer;
+  }
+
+  function fontFamily(p) {
+    const f = (p.theme && p.theme.font) || {};
+    return [f.family ? `"${f.family}"` : '', p.fontFallback || '"Segoe UI", sans-serif'].filter(Boolean).join(', ');
+  }
+
+  function alertKey(a) {
+    return a && a.text ? `${a.text}|${a.position || 'bottom'}|${a.size || 56}` : '';
+  }
+
   function coverLayer(kind, logoUrl) {
     const c = el('div', 'rg-layer rg-cover');
     if (kind === 'black') c.style.background = '#000';
@@ -195,8 +225,10 @@
     const bgHost = el('div', 'rg-host', stage);
     const textHost = el('div', 'rg-host', stage);
     const coverHost = el('div', 'rg-host', stage);
+    const alertHost = el('div', 'rg-host', stage);
     let curBgKey = null;
     let curCover = null;
+    let curAlert = '';
     let tickTimer = null;
     let lastPayload = null;
 
@@ -263,6 +295,25 @@
       swap(textHost, textLayer, ms);
       // A countdown keeps counting after it is shown.
       if (textLayer._tick) tickTimer = setInterval(() => textLayer._tick(), 250);
+      // The same video keeps playing while the operator mutes it or pauses it: no reload, no jump.
+      const vid = bgHost.querySelector('video');
+      if (vid && p.mode === 'media' && p.media) {
+        vid.muted = !p.media.sound;
+        vid.loop = p.media.loop !== false;
+        if (p.media.paused) vid.pause();
+        else if (vid.paused) vid.play().catch(() => {});
+      }
+
+      const nextAlert = alertKey(p.alert);
+      if (nextAlert !== curAlert) {
+        swap(alertHost, alertLayer(p.alert, fontFamily(p)), ms ? Math.min(ms, 250) : 0);
+        curAlert = nextAlert;
+        // Measure the bar that is now on screen and lift the reference and song name clear of it,
+        // however many lines the message runs to.
+        const bar = alertHost.querySelector('.rg-alert-bottom');
+        stage.style.setProperty('--rg-alert-lift', bar ? `${bar.offsetHeight + 16}px` : '0px');
+      }
+
       const cover = p.cover || null;
       if (cover !== curCover) {
         if (cover === 'clear') swap(coverHost, el('div', 'rg-layer'), ms);

@@ -5,6 +5,30 @@ App, database schema and content packs are versioned separately:
 - **Schema version**: `MIGRATIONS` in `src/main/db.js` (the library is backed up before every upgrade).
 - **Content pack versions**: each pack's `manifest.json`; see the pack's own `CHANGELOG.md`.
 
+## App 1.4.0 (2026-10-25)
+### Scripture people can place from the back row
+- The **reference is much larger and brighter** on the audience screen — "John 3:16 · KJV" now reads
+  from the back of the church. Four sizes under **Settings → Scripture → Reference size on screen**,
+  and it grows with the A+ text size like everything else.
+
+### Messages across the screen
+- **Message** in the Live controls (or **Ctrl+M**) puts a line over whatever is live — a song, a
+  reading, even a black screen — for a nursery call or a car blocking the gate. Choose the top or
+  the bottom of the screen, three sizes, and how long it stays before it takes itself down.
+- The reading's reference and the song's name step up out of its way, however many lines it runs to.
+- The last eight messages are kept, because the same ones come round most Sundays. Ctrl+M again, or
+  the Message button, takes it down.
+- A message is only ever on the audience screen: the preview and the slide thumbnails stay clean.
+
+### Films and clips that can be heard
+- A video in the service now has **Pause, Sound and Loop** beside the Live controls (**K** and **M**),
+  so a clip can be played with its sound, held on a frame and let run once instead of looping.
+
+### Find and show (Ctrl+K)
+- One box for a hymn number, a title, a line of a song, a reference like `Jn 3:16` or a picture:
+  **Enter** previews it, **Shift+Enter** puts it straight on the screen. For the moment somebody
+  calls out a hymn mid-service.
+
 ## App 1.3.1 (2026-10-25)
 - **Fits a small laptop.** On a 1024x768 or similar screen the title bar no longer pushed the Live
   panel and its controls off the side; below 1250 pixels wide the toolbar shows its icons alone.
