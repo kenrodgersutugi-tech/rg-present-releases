@@ -13,6 +13,11 @@ on:
   push:
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to publish the release under, e.g. v1.2.0 (created at the chosen branch)'
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -46,7 +51,7 @@ jobs:
         run: npx electron-builder --win --publish never
 
       - name: Build update feed
-        run: node tools/make-update-feed.js feed --notes "${{ github.ref_name }}"
+        run: node tools/make-update-feed.js feed --notes "${{ inputs.tag || github.ref_name }}"
 
       # The download page links to a fixed file name, so publish a copy under it as well.
       - name: Copy the installer under the download page's fixed name
@@ -55,6 +60,9 @@ jobs:
 
       - uses: softprops/action-gh-release@v2
         with:
+          # Run by hand (workflow_dispatch) the tag is given as an input and created here; a tag
+          # push brings its own.
+          tag_name: ${{ inputs.tag || github.ref_name }}
           draft: false
           generate_release_notes: true
           files: |
