@@ -1,7 +1,11 @@
 # RG-Present — downloads
 
 This repository holds the **Windows installers** for RG-Present, the release notes, and the
-download page. **There is no source code here.**
+download page.
+
+`app/` holds the source of the RG DEV Industries build of RG-Present (hymn library, Bibles, themes,
+dual-screen output), and `.github/workflows/release.yml` builds and publishes its installer whenever
+a `v*` tag is pushed. See [`app/PUBLISHING.md`](app/PUBLISHING.md).
 
 ## Download
 
