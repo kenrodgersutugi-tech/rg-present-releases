@@ -5,6 +5,12 @@ App, database schema and content packs are versioned separately:
 - **Schema version**: `MIGRATIONS` in `src/main/db.js` (the library is backed up before every upgrade).
 - **Content pack versions**: each pack's `manifest.json`; see the pack's own `CHANGELOG.md`.
 
+## App 1.3.1 (2026-10-25)
+- **Fits a small laptop.** On a 1024x768 or similar screen the title bar no longer pushed the Live
+  panel and its controls off the side; below 1250 pixels wide the toolbar shows its icons alone.
+- Tested by installing the published release on a clean Windows machine: it installs silently,
+  starts, loads the 3,648 hymns and the KJV, and uninstalls again.
+
 ## App 1.3.0 (2026-10-25)
 ### Straight to the screen
 - **Double-click a song, a picture or a video in the library and it goes live at once**, without

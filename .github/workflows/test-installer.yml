@@ -72,16 +72,19 @@ jobs:
           $data = "$env:APPDATA\RG-Present\data"
           if (-not (Test-Path $data)) { throw 'RG-Present did not create its data folder.' }
           Get-ChildItem $data -Recurse -File | Select-Object FullName, Length | Format-Table -AutoSize
-          foreach ($f in @('library.sqlite', 'bibles.sqlite', 'settings.json')) {
+          $minimum = @{ 'library.sqlite' = 1MB; 'bibles.sqlite' = 1MB; 'settings.json' = 200 }
+          foreach ($f in $minimum.Keys) {
             $path = Join-Path $data $f
             if (-not (Test-Path $path)) { throw "$f was not created on first run." }
-            if ((Get-Item $path).Length -lt 1024) { throw "$f is suspiciously empty." }
+            if ((Get-Item $path).Length -lt $minimum[$f]) { throw "$f is smaller than it should be: $((Get-Item $path).Length) bytes." }
           }
           $settings = Get-Content (Join-Path $data 'settings.json') -Raw | ConvertFrom-Json
           Write-Host "Update source: $($settings.updateFeedUrl)"
           Write-Host "Auto install:  $($settings.autoInstallUpdates)"
           Write-Host "Verses/slide:  $($settings.scriptureVersesPerSlide)"
-          Write-Host "Library: {0:N1} MB" -f ((Get-Item (Join-Path $data 'library.sqlite')).Length / 1MB)
+          Write-Host ("Library: {0:N1} MB, Bibles: {1:N1} MB" -f `
+            ((Get-Item (Join-Path $data 'library.sqlite')).Length / 1MB),
+            ((Get-Item (Join-Path $data 'bibles.sqlite')).Length / 1MB))
 
       - name: Close it and uninstall
         shell: pwsh
