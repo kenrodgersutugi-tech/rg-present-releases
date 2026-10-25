@@ -130,9 +130,22 @@
     boxEl.style.cssText = `left:${box.x}%;top:${box.y}%;width:${box.w}%;height:${box.h}%;` +
       `align-items:${{ top: 'flex-start', middle: 'center', bottom: 'flex-end' }[t.valign || 'middle']};` +
       `justify-content:${{ left: 'flex-start', center: 'center', right: 'flex-end' }[t.align || 'center']};`;
-    const text = el('div', 'rg-text', boxEl);
+    // Two languages at once (English above Kimeru, say): each half is fitted on its own, so a long
+    // verse in one language never shrinks the other.
+    const dual = p.text2 ? el('div', 'rg-dual', boxEl) : null;
+    const half1 = dual ? el('div', 'rg-half', dual) : null;
+    const half2 = dual ? el('div', 'rg-half rg-half-2', dual) : null;
+    const text = el('div', 'rg-text', half1 || boxEl);
     text.textContent = p.text;
+    const text2 = dual ? el('div', 'rg-text rg-text-2', half2) : null;
+    if (text2) text2.textContent = p.text2;
     const family = [f.family ? `"${f.family}"` : '', p.fontFallback || '"Segoe UI", sans-serif'].filter(Boolean).join(', ');
+    if (text2) {
+      text2.style.cssText = `font-family:${family};font-weight:${f.weight || 600};color:${f.color || '#fff'};opacity:.88;` +
+        `line-height:${f.lineHeight || 1.25};text-align:${t.align || 'center'};` +
+        (f.uppercase ? 'text-transform:uppercase;' : '') +
+        (f.shadow ? 'text-shadow:0 3px 14px rgba(0,0,0,.65),0 1px 3px rgba(0,0,0,.8);' : '');
+    }
     text.style.cssText = `font-family:${family};font-weight:${f.weight || 600};color:${f.color || '#fff'};` +
       `line-height:${f.lineHeight || 1.25};text-align:${t.align || 'center'};` +
       (f.uppercase ? 'text-transform:uppercase;' : '') +
@@ -159,7 +172,12 @@
       ft.style.cssText = `font-size:${Math.round((footer.size || 26) * zoom)}px;color:${footer.color || 'rgba(255,255,255,.7)'};font-family:${family};text-align:${t.align === 'left' ? 'left' : 'center'}`;
     }
     // The text still has to fit its box, so a bigger size raises the ceiling rather than overflowing.
-    layer._fit = () => fitText(text, boxEl, Math.round((f.maxSize || 92) * zoom), Math.round((f.minSize || 28) * zoom));
+    const max = Math.round((f.maxSize || 92) * zoom);
+    const min = Math.round((f.minSize || 28) * zoom);
+    layer._fit = () => {
+      fitText(text, half1 || boxEl, max, min);
+      if (text2) fitText(text2, half2, max, min);
+    };
     if (!opts || opts.fit !== false) layer._fit();
     return layer;
   }

@@ -61,9 +61,21 @@
     if (item.type === 'song') {
       const song = await App.getSong(item.songId);
       if (!song) return { kind: 'song', title: `${item.title} (missing)`, slides: [], theme: App.themeFor(item.themeId) };
+      const slides = L.buildSlides(song, opts);
+      let secondTitle = '';
+      // Both languages on one slide: the linked hymn's verses are paired with this one's, verse by
+      // verse, and each half of the slide is fitted on its own.
+      if (item.secondSongId) {
+        const other = await App.getSong(item.secondSongId);
+        if (other) {
+          secondTitle = other.title;
+          const otherSlides = L.buildSlides(other, opts);
+          slides.forEach((sl, i) => { sl.text2 = otherSlides[i] ? otherSlides[i].text : ''; });
+        }
+      }
       return {
         kind: 'song', song, title: song.title, number: song.number, author: song.author, copyright: song.copyright,
-        slides: L.buildSlides(song, opts), theme: App.themeFor(item.themeId || song.theme_id),
+        secondTitle, slides, theme: App.themeFor(item.themeId || song.theme_id),
       };
     }
     if (item.type === 'custom') {
@@ -108,6 +120,7 @@
       until: s.countdown ? App.countdownUntil(s.countdown) : null,
       endText: s.countdown ? s.countdown.endText || '' : '',
       text: s.text || '',
+      text2: s.text2 || '',
       label: s.label || '',
       first: !!s.first,
       media: s.media ? { ...s.media, ...App.mediaPlayback } : null,
@@ -223,16 +236,34 @@
       const b = document.createElement('button');
       b.textContent = App.langLabel(s.language);
       b.title = s.title;
-      b.className = s.id === p.item.songId ? 'on' : '';
+      b.className = s.id === p.item.songId && !p.item.secondSongId ? 'on' : '';
       b.onclick = async () => {
         p.item.songId = s.id;
         p.item.title = s.title;
         p.item.language = s.language;
+        delete p.item.secondSongId;
         App.markDirty();
         await App.setPreview(p.item, p.index, p.slide);
       };
       box.appendChild(b);
     }
+    // Both languages at once, one above the other — for a congregation that sings in two.
+    const both = document.createElement('button');
+    both.textContent = 'BOTH';
+    both.title = 'Show both languages on each slide';
+    both.className = p.item.secondSongId ? 'on' : '';
+    both.onclick = async () => {
+      if (p.item.secondSongId) delete p.item.secondSongId;
+      else {
+        const other = linked.find((s) => s.id !== p.item.songId);
+        if (!other) return App.toast('This hymn has no linked translation', true);
+        p.item.secondSongId = other.id;
+      }
+      App.markDirty();
+      await App.setPreview(p.item, p.index, p.slide);
+      if (App.live && App.live.item === p.item) await App.refreshPreview();
+    };
+    box.appendChild(both);
     box.hidden = false;
   };
 
@@ -284,6 +315,59 @@
   App.updateBackgroundButton = () => {
     const b = $('#btnBackground');
     if (b) b.classList.toggle('on', !!(App.preview && App.preview.item && App.preview.item.background));
+  };
+
+  // ---------- keep reading ----------
+  /**
+   * Carry a reading on past where it was going to stop — the next verse, and over the chapter
+   * boundary when the chapter runs out. The reading on screen simply grows, so everything already
+   * read is still there to go back to.
+   */
+  App.continueReading = async () => {
+    const live = App.live;
+    if (!live || live.r.kind !== 'scripture') return App.toast('A reading has to be live first', true);
+    const B = window.RGBible;
+    const item = live.item;
+    const ref = { ...item.ref };
+    const chapters = (await rg.invoke('bible:structure', item.bibleId)).find((b) => b.book === ref.book);
+    if (!chapters) return App.toast('That book is not in this Bible', true);
+
+    const lastChapter = ref.chapterEnd || ref.chapter;
+    const inChapter = await rg.invoke('bible:chapter', { id: item.bibleId, book: ref.book, chapter: lastChapter });
+    const lastVerse = ref.verse == null ? (inChapter.length ? inChapter[inChapter.length - 1].verse : 0) : (ref.verseEnd || ref.verse);
+
+    let nextChapter = lastChapter;
+    let nextVerse = lastVerse + 1;
+    if (!inChapter.some((v) => v.verse === nextVerse)) {
+      nextChapter = lastChapter + 1;
+      nextVerse = 1;
+      if (nextChapter > chapters.chapters) {
+        return App.toast(`That is the end of ${B.bookName(ref.book)}`);
+      }
+    }
+
+    item.ref = {
+      book: ref.book,
+      chapter: ref.chapter,
+      verse: ref.verse == null ? 1 : ref.verse,
+      chapterEnd: nextChapter,
+      verseEnd: nextVerse,
+    };
+    item.title = B.formatReference(item.ref);
+    if (App.service.items.includes(item)) App.markDirty();
+    const was = App.live.slide;
+    App.live.r = await App.resolve(item);
+    $('#liveTitle').textContent = App.live.r.title;
+    App.liveSlide(Math.min(was + 1, App.live.r.slides.length - 1));
+    renderLiveSlides();
+    markSel($('#liveSlides'), App.live.slide);
+    if (App.preview && App.preview.item === item) await App.setPreview(item, App.preview.index, App.live.slide);
+    App.toast(`Reading on: ${B.formatReference({ ...item.ref, chapter: nextChapter, verse: nextVerse, chapterEnd: nextChapter, verseEnd: nextVerse })}`);
+  };
+
+  App.updateReadingButton = () => {
+    const b = $('#btnKeepReading');
+    if (b) b.hidden = !(App.live && App.live.r.kind === 'scripture');
   };
 
   // ---------- on-screen messages ----------
@@ -338,6 +422,7 @@
     App.mediaPlayback = { ...App.mediaPlayback, ...patch };
     App.sendLive();
     App.updateMediaButtons();
+    App.updateReadingButton();
   };
 
   App.updateMediaButtons = () => {
@@ -371,6 +456,7 @@
     rg.sendOutput(p);
     App.liveStage.show(p);
     App.updateMediaButtons();
+    App.updateReadingButton();
     ['black', 'clear', 'logo'].forEach((c) => $('#btn' + c[0].toUpperCase() + c.slice(1)).classList.toggle('on', App.cover === c));
   };
 
@@ -383,6 +469,8 @@
     if (App.live.index != null && nextItem) {
       App.goLive(nextItem, ni, 0);
       App.setPreview(App.service.items[ni + 1] || nextItem, App.service.items[ni + 1] ? ni + 1 : ni, 0);
+    } else if (App.live.r.kind === 'scripture') {
+      App.continueReading(); // nothing after it: read on into the next verse or chapter
     } else App.stopAuto();
   };
   App.prev = () => App.live && App.liveSlide(App.live.slide - 1);
@@ -655,6 +743,7 @@
       if (e.ctrlKey && (e.key === '+' || e.key === '=')) { e.preventDefault(); return App.nudgeTextScale(1); }
       if (e.ctrlKey && (e.key === '-' || e.key === '_')) { e.preventDefault(); return App.nudgeTextScale(-1); }
       if (e.ctrlKey && e.key === '0') { e.preventDefault(); return App.setTextScale(1); }
+      if (e.ctrlKey && e.key.toLowerCase() === 'p') { e.preventDefault(); return Dialogs.printService(); }
       if (e.ctrlKey && e.key.toLowerCase() === 'k') { e.preventDefault(); return Dialogs.quickFind(); }
       if (e.ctrlKey && e.key.toLowerCase() === 'm') { e.preventDefault(); return App.toggleAlert(); }
       if (modal || inField) {
@@ -669,6 +758,7 @@
         case 'c': case 'C': App.setCover('clear'); break;
         case 'l': case 'L': App.setCover('logo'); break;
         case 'r': case 'R': App.jumpToChorus(); break;
+        case ']': App.continueReading(); break;
         case 'k': case 'K': if (App.liveVideo()) App.setMediaPlayback({ paused: !App.mediaPlayback.paused }); break;
         case 'm': case 'M': if (App.liveVideo()) App.setMediaPlayback({ sound: !App.mediaPlayback.sound }); break;
         case '+': case '=': App.nudgeTextScale(1); break;

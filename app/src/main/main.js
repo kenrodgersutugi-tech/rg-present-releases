@@ -261,6 +261,36 @@ function registerIpc() {
   });
   handle('app:open-data-folder', () => shell.openPath(paths.data));
 
+  /**
+   * Print the order of service: the operator's window builds the sheet, this turns it into a PDF
+   * the musicians, the preacher and the sound desk can be given. The page is rendered with no
+   * scripts and no network of its own.
+   */
+  handle('service:print', async ({ html, name }) => {
+    const w = new BrowserWindow({ show: false, webPreferences: { sandbox: true, javascript: false, webSecurity: true } });
+    try {
+      await w.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(html)}`);
+      const pdf = await w.webContents.printToPDF({ printBackground: true, pageSize: 'A4' });
+      // Dev aid: RG_DEBUG_PRINT=<file> saves the sheet without the save dialog.
+      if (!app.isPackaged && process.env.RG_DEBUG_PRINT) {
+        fs.writeFileSync(process.env.RG_DEBUG_PRINT, pdf);
+        return process.env.RG_DEBUG_PRINT;
+      }
+      const safe = String(name || 'Order of service').replace(/[\\/:*?"<>|]/g, '-').slice(0, 80);
+      const r = await dialog.showSaveDialog(win.operator, {
+        title: 'Save the order of service',
+        defaultPath: path.join(app.getPath('documents'), `${safe}.pdf`),
+        filters: [{ name: 'PDF', extensions: ['pdf'] }],
+      });
+      if (r.canceled || !r.filePath) return null;
+      fs.writeFileSync(r.filePath, pdf);
+      shell.openPath(r.filePath);
+      return r.filePath;
+    } finally {
+      w.destroy();
+    }
+  });
+
   handle('settings:get', () => store.loadSettings());
   handle('settings:set', (patch) => {
     const before = store.loadSettings();

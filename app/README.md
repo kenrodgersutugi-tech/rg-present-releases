@@ -35,6 +35,8 @@ npm run dist
 | Esc | Remove black/clear/logo |
 | + / − (or Ctrl+= / Ctrl+−) | Bigger / smaller words on the audience screen |
 | Ctrl+0 | Back to 100% text size |
+| ] | Read on — the next verse, or the next chapter |
+| Ctrl+P | Print the order of service |
 | Ctrl+K | Find and show: hymn number, title, a line, or a reference. Enter previews, Shift+Enter goes live |
 | Ctrl+M | Put a message across the screen, or take it down |
 | K / M | Pause a video / turn its sound on and off |
@@ -43,7 +45,8 @@ npm run dist
 - **Double-click a song, picture or video in the library to put it on the screen at once** — it does not
   have to be in the service. Use **Add to service**, Enter or drag it in to build the running order;
   in the Service panel, click an item to preview it and double-click to go live.
-- Songs that exist in both English and Kimeru show an **EN / KIM** switch in Preview.
+- Songs that exist in both English and Kimeru show an **EN / KIM** switch in Preview, and **BOTH**
+  puts the two languages on one slide, one above the other.
 - The audience output goes to the first non-primary screen (change it in Settings). With one screen it
   opens as a window and moves to the projector automatically when one is connected.
 - The slide fills whatever screen it lands on — 16:9, 16:10, 4:3 or ultrawide — and the Preview and Live
@@ -59,6 +62,8 @@ npm run dist
   song's name move up out of its way.
 - A video in the service can be **paused, heard and played once instead of looping**.
 - The current service autosaves on every change and comes back after a crash or power cut.
+- **Print** (Ctrl+P) makes a PDF of the order of service — the running order alone, or with every
+  word for the musicians.
 
 ## What's in the library
 
@@ -84,6 +89,8 @@ The **Scripture** tab has a book/chapter browser, a reference box and a whole-Bi
 - A reading goes live **one verse at a time**; change that under Settings → Scripture → *Verses per slide*.
 - The reference is always on screen, large enough to read from the back; four sizes under
   Settings → Scripture.
+- **Read on** (or `]`) carries a reading into the next verse and over the chapter boundary, so a
+  passage never has to be set up again mid-service.
 - Switch a passage between translations from the Preview panel.
 
 ### Adding another translation

@@ -5,6 +5,25 @@ App, database schema and content packs are versioned separately:
 - **Schema version**: `MIGRATIONS` in `src/main/db.js` (the library is backed up before every upgrade).
 - **Content pack versions**: each pack's `manifest.json`; see the pack's own `CHANGELOG.md`.
 
+## App 1.5.0 (2026-10-25)
+### Keep reading
+- **Read on** beside the Live controls (or **]**) carries a reading past where it was going to stop —
+  the next verse, and over into the next chapter when the chapter runs out. Everything already read
+  stays on the slides behind, and the reference on screen keeps up (John 2:24–3:2).
+- Pressing → at the end of a reading with nothing after it in the service reads on by itself.
+
+### Both languages on one slide
+- A hymn that exists in English and Kimeru can show **both at once**, one above the other with a
+  line between: press **BOTH** in the Preview panel's language switch. Each language is fitted on
+  its own, so a long verse in one never shrinks the other, and the stage display shows both too.
+- 71 hymns in the library are linked this way already.
+
+### Printed order of service
+- **Print** in the toolbar (or **Ctrl+P**) makes a PDF for the people who are not at the computer:
+  the running order with hymn numbers for the preacher and the sound desk, and — if you want it —
+  every word of every song and the readings in full, for the musicians.
+- It opens as soon as it is saved, and prints the same on any machine.
+
 ## App 1.4.0 (2026-10-25)
 ### Scripture people can place from the back row
 - The **reference is much larger and brighter** on the audience screen — "John 3:16 · KJV" now reads

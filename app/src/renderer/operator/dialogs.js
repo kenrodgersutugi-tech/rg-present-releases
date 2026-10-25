@@ -238,6 +238,81 @@
     d.q('[data-show]').onclick = show;
   };
 
+  // ---------- printed order of service ----------
+  /**
+   * A sheet for the people who are not at the computer: the running order for the preacher and the
+   * sound desk, and, when it is wanted, every word — so the musicians can follow and a visitor
+   * without a screen in view can still sing.
+   */
+  Dialogs.printService = async () => {
+    if (!App.service.items.length) return App.toast('There is nothing in the service yet', true);
+    const d = modal({
+      title: 'Print the order of service', narrow: true,
+      body: `<div class="form-grid">
+          <label class="field full"><span>Heading</span><input id="pName" value="${esc(App.service.name)}"></label>
+          <label class="field full"><span>Date</span><input id="pDate" value="${esc(new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }))}"></label>
+          <label class="field check"><input type="checkbox" id="pWords" checked> Print the words of the songs</label>
+          <label class="field check"><input type="checkbox" id="pScripture" checked> Print the readings in full</label>
+        </div>`,
+      footer: '<button class="btn" data-cancel>Cancel</button><button class="btn primary" data-print>Make the PDF</button>',
+    });
+    d.q('[data-cancel]').onclick = () => d.close();
+    d.q('[data-print]').onclick = async () => {
+      const opts = { name: d.q('#pName').value.trim() || 'Order of service', date: d.q('#pDate').value.trim(), words: d.q('#pWords').checked, scripture: d.q('#pScripture').checked };
+      d.close();
+      App.toast('Building the sheet…');
+      try {
+        const file = await rg.invoke('service:print', { html: await serviceSheetHtml(opts), name: opts.name });
+        if (file) App.toast('Saved and opened');
+      } catch (e) {
+        App.toast(cleanErr(e), true);
+      }
+    };
+  };
+
+  /** The sheet itself: plain HTML that prints the same on any machine. */
+  async function serviceSheetHtml(opts) {
+    const rows = [];
+    for (const [i, item] of App.service.items.entries()) {
+      const r = await App.resolve(item);
+      const kind = { song: 'Hymn', scripture: 'Reading', custom: 'Text', countdown: 'Countdown', media: 'Media' }[item.type] || '';
+      const head = `<h2><span class="n">${i + 1}</span>${esc(r.title)}${r.number ? ` <span class="num">No. ${esc(r.number)}</span>` : ''}<span class="kind">${esc(kind)}</span></h2>`;
+      const meta = [r.author, r.copyright, r.secondTitle && `with ${r.secondTitle}`].filter(Boolean).map(esc).join(' · ');
+      let body = '';
+      if (item.type === 'song' && opts.words) {
+        body = r.slides.map((sl) => `<div class="v"><b>${esc(sl.code || sl.label || '')}</b><p>${esc(sl.text)}</p>${sl.text2 ? `<p class="second">${esc(sl.text2)}</p>` : ''}</div>`).join('');
+      } else if (item.type === 'scripture' && opts.scripture) {
+        body = `<p class="reading">${r.slides.map((sl) => esc(sl.text)).join(' ')}</p>`;
+      } else if (item.type === 'custom') {
+        body = `<p class="reading">${esc(item.text || '')}</p>`;
+      }
+      rows.push(`<section>${head}${meta ? `<p class="meta">${meta}</p>` : ''}${body}</section>`);
+    }
+    return `<!doctype html><html><head><meta charset="utf-8"><title>${esc(opts.name)}</title><style>
+      @page { margin: 18mm 16mm; }
+      body { font: 12pt/1.45 "Segoe UI", system-ui, sans-serif; color: #111; }
+      header { border-bottom: 2px solid #111; padding-bottom: 8px; margin-bottom: 16px; }
+      h1 { font-size: 20pt; margin: 0; }
+      .date { color: #555; margin: 2px 0 0; }
+      section { break-inside: avoid; margin: 0 0 16px; }
+      h2 { font-size: 13pt; margin: 0 0 2px; display: flex; align-items: baseline; gap: 8px; }
+      h2 .n { display: inline-block; min-width: 20px; color: #777; font-weight: 600; }
+      h2 .num { color: #555; font-weight: 500; font-size: 11pt; }
+      h2 .kind { margin-left: auto; font-size: 9pt; letter-spacing: .08em; text-transform: uppercase; color: #888; font-weight: 600; }
+      .meta { margin: 0 0 6px 28px; color: #666; font-size: 10pt; }
+      .v { margin: 0 0 8px 28px; break-inside: avoid; }
+      .v b { font-size: 9pt; letter-spacing: .08em; text-transform: uppercase; color: #888; }
+      .v p, .reading { margin: 2px 0 0; white-space: pre-wrap; }
+      .v p.second { color: #555; margin-top: 4px; }
+      .reading { margin-left: 28px; }
+      footer { margin-top: 24px; border-top: 1px solid #ccc; padding-top: 6px; color: #888; font-size: 9pt; }
+    </style></head><body>
+      <header><h1>${esc(opts.name)}</h1>${opts.date ? `<p class="date">${esc(opts.date)}</p>` : ''}</header>
+      ${rows.join('')}
+      <footer>${App.service.items.length} items · printed from RG-Present</footer>
+    </body></html>`;
+  }
+
   // ---------- quick find ----------
   /**
    * Ctrl+K: one box for everything — a hymn number, a title, a line of a song, a reference like
