@@ -22,10 +22,9 @@ https://github.com/kenrodgersutugi-tech/rg-present-releases/releases/latest/down
 | File | What it is |
 | --- | --- |
 | `RG-Present-Setup.exe` | The installer, under a fixed name so the link above never changes |
-| `rg-present-<version>-setup.exe` | The same installer, named by version. **Required by the updater — never delete it.** |
-| `*.exe.blockmap` | Lets an update download only the parts that changed. **Required.** |
-| `latest.yml` | Tells installed copies what the newest version is. **Required.** |
-| `beta.yml` | The same, for installs that have opted into pre-releases |
+| `RG-Present-Setup-<version>.exe` | The same installer, named by version. **Required by the updater — never delete it.** |
+| `*.rgpkg` | The song, theme and Bible packs. **Required:** installed copies fetch these to update their libraries. |
+| `updates.json` | Tells installed copies what the newest version is, with a SHA-256 for every file. **Required.** |
 
 Deleting any file marked *required* breaks automatic updates for every church already running
 RG-Present. If a release turns out to be bad, set it back to a **draft** instead — installed
