@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>RG-Present — church presentation software for Windows</title>
+    <title>RG-Present — hymns, scripture and slides for Windows</title>
     <meta
       name="description"
-      content="RG-Present puts song words, scripture and slides on the projector during a live service. Free to download, built for Windows by RG Devs."
+      content="The RG DEV Industries build of RG-Present: 3,648 public-domain hymns, the King James Version, themes and dual-screen output. Free to download, works offline, built for Windows."
     />
     <link rel="icon" href="assets/icon-256.png" />
     <meta name="theme-color" content="#0b0f14" />
@@ -139,6 +139,19 @@
         color: var(--secondary);
         margin: 0 0 32px;
         max-width: 38rem;
+      }
+
+      /* Which build this is: quieter than the lede, but impossible to miss. */
+      .lede.note {
+        font-size: 15px;
+        color: var(--muted);
+        border-left: 2px solid var(--accent);
+        padding-left: 14px;
+        margin-bottom: 28px;
+      }
+
+      .lede.note strong {
+        color: var(--secondary);
       }
 
       .download {
@@ -318,6 +331,11 @@
           service. It works offline, starts fast, and keeps your congregation looking at the
           slide — never at your desktop.
         </p>
+        <p class="lede note">
+          This is the build made by <strong>RG DEV Industries</strong>, published from this page
+          and nowhere else. It comes with the hymn library and the King James Version already in
+          it, and keeps itself up to date from here.
+        </p>
 
         <a class="download" id="download" href="#" rel="noopener">
           <svg
@@ -340,6 +358,42 @@
 
         <p class="meta" id="meta">Checking for the latest version…</p>
       </div>
+
+      <section>
+        <h2>What comes with it</h2>
+        <div class="grid">
+          <div class="card">
+            <h3>3,648 hymns</h3>
+            <p>
+              The Open Hymnal, Sacred Songs &amp; Solos, the Christian Hymn Book, the Wesleyan
+              Methodist Hymn Book, the Otterbein Hymnal and Iuku ria Rwimbo in Kimeru. All public
+              domain, searchable by number, title or any line.
+            </p>
+          </div>
+          <div class="card">
+            <h3>The King James Version</h3>
+            <p>
+              All 31,102 verses, with readings going on the screen one verse at a time and the
+              reference large enough to read from the back. Other translations your church is
+              licensed to use can be imported.
+            </p>
+          </div>
+          <div class="card">
+            <h3>Two screens and a stage display</h3>
+            <p>
+              The audience screen fills any projector, and the musicians get the current verse,
+              the next one and a clock on a screen of their own.
+            </p>
+          </div>
+          <div class="card">
+            <h3>Updates that install themselves</h3>
+            <p>
+              A new version downloads quietly and installs when you close the program — never
+              during a service. Switch it off in Settings if you would rather be asked.
+            </p>
+          </div>
+        </div>
+      </section>
 
       <section>
         <h2>What you need</h2>
@@ -462,8 +516,8 @@
       </section>
 
       <footer>
-        <span>RG-Present is made by RG Devs in Kenya.</span>
-        <span id="copyright">© RG Devs</span>
+        <span>This build of RG-Present is made by RG DEV Industries in Kenya.</span>
+        <span id="copyright">© RG DEV Industries</span>
       </footer>
     </div>
 
@@ -526,7 +580,7 @@
         }
 
         document.getElementById('copyright').textContent =
-          '© RG Devs ' + new Date().getFullYear()
+          '© RG DEV Industries ' + new Date().getFullYear()
 
         // ------------------------------------------------------------------
         // Theme

@@ -1,7 +1,7 @@
-# RG-Present — downloads
+# RG-Present — downloads (RG DEV Industries build)
 
-This repository holds the **Windows installers** for RG-Present, the release notes, and the
-download page.
+This repository holds the **Windows installers** for the RG DEV Industries build of RG-Present,
+its release notes and its download page. It is the only place that build is published.
 
 `app/` holds the source of the RG DEV Industries build of RG-Present (hymn library, Bibles, themes,
 dual-screen output), and `.github/workflows/release.yml` builds and publishes its installer whenever
@@ -29,7 +29,7 @@ https://github.com/kenrodgersutugi-tech/rg-present-releases/releases/latest/down
 
 Deleting any file marked *required* breaks automatic updates for every church already running
 RG-Present. If a release turns out to be bad, set it back to a **draft** instead — installed
-copies ignore drafts. The full procedure is in `docs/RELEASING.md` in the source repository.
+copies ignore drafts. The full procedure is in [`app/PUBLISHING.md`](app/PUBLISHING.md).
 
 ## The download page
 
