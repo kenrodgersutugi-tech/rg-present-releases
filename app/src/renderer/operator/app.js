@@ -89,6 +89,17 @@
       // Each slide of the presentation is a picture of its own, shown the way any other
       // picture is. Nothing of PowerPoint is running, so nothing of PowerPoint can appear.
       const slides = await rg.invoke('decks:slides', item.deckId);
+      // A service saved last year can outlive the presentation it names. Say so on the
+      // operator's screen rather than sending an empty item to the projector.
+      if (!slides.length) {
+        return {
+          kind: 'deck',
+          title: item.title,
+          missing: true,
+          slides: [{ label: 'Missing', code: '', text: `“${item.title}” is no longer in the presentations. Add the file again.` }],
+          theme: App.themeFor(item.themeId),
+        };
+      }
       return {
         kind: 'deck',
         title: item.title,

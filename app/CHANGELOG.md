@@ -5,6 +5,31 @@ App, database schema and content packs are versioned separately:
 - **Schema version**: `MIGRATIONS` in `src/main/db.js` (the library is backed up before every upgrade).
 - **Content pack versions**: each pack's `manifest.json`; see the pack's own `CHANGELOG.md`.
 
+## App 1.6.0 (2026-11-01)
+### The web, inside RG-Present
+- **Web** in the toolbar (or **Ctrl+Shift+W**) opens a browser in a window of its own. One box:
+  type what you are looking for and it searches, or type an address and it goes there.
+- It opens on **your** screen, never the projector's, so nothing of the web can reach the
+  congregation by accident. The page runs sealed off from the rest of RG-Present: it cannot see
+  your songs, your service or the audience screen, and nothing downloads itself onto the church
+  computer.
+- **Right-click a picture → Save this picture to Media**, and a backdrop you found online is in
+  your media library, ready to go behind the words.
+
+### Presentations
+- A **Presentations** tab beside Songs, Scripture and Media. Add a **PowerPoint (.pptx)** or a
+  **PDF**, and every slide is kept as a picture in your own library.
+- Because they are pictures, a deck still shows after the PowerPoint has gone home on somebody's
+  memory stick — and **PowerPoint never runs during your service**, so it can never put a dialog
+  on the projector in the middle of the notices.
+- Double-click a deck to put it on the screen, or drag it into the service order to keep it with
+  the songs and the readings. → and ← walk through the slides like any other item.
+- A PDF comes in looking exactly as it was designed and needs nothing else installed, so for a
+  deck that really matters, **save it as PDF** before you bring it across. A PowerPoint is used
+  as-is if Office is on the computer, and read straight out of the file if it is not.
+- A saved service whose presentation has since been deleted says so on the operator screen
+  rather than sending an empty slide to the screen.
+
 ## App 1.5.1 (2026-10-25)
 - **One language on a slide.** The two-language slide added in 1.5.0 is gone: a Kimeru hymn stays
   purely Kimeru and an English hymn purely English. The **EN / KIM** switch in Preview still moves a
