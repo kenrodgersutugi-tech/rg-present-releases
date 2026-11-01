@@ -19,6 +19,8 @@
     'service-save': () => App.saveService(),
     'service-print': () => Dialogs.printService(),
     'import-hymns': () => Dialogs.importHymns(),
+    web: () => rg.invoke('web:open'),
+    'deck-import': () => Dialogs.importPresentation(),
     themes: () => Dialogs.themes(),
     settings: () => Dialogs.settings(),
     'toggle-output': async () => { App.settings = await rg.invoke('settings:set', { outputEnabled: !$('#btnOutput').classList.contains('on') }); },

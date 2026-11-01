@@ -217,7 +217,7 @@ button { cursor: pointer; }
 .tab { border: 0; background: transparent; padding: 7px 14px 9px; color: var(--text-3); font-weight: 600; border-bottom: 2px solid transparent; }
 .tab.active { color: var(--text); border-bottom-color: var(--accent); }
 .lib-body { flex: 1; min-height: 0; display: grid; grid-template-columns: 210px 1fr 360px; }
-.lib-body[data-body="media"], .lib-body[data-body="services"] { display: flex; flex-direction: column; }
+.lib-body[data-body="media"], .lib-body[data-body="services"], .lib-body[data-body="presentations"] { display: flex; flex-direction: column; }
 .folders { border-right: 1px solid var(--line-soft); overflow: auto; padding: 6px; }
 .folder {
   display: flex; justify-content: space-between; align-items: center; width: 100%; border: 0; background: transparent;

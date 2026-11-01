@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'self'">
+<title>RG-Present — Web</title>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #12141a; --surface: #1a1d26; --line: #2a2f3a;
+    --text: #e8eaf0; --muted: #9aa4b2; --accent: #7aa2f7;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; height: 48px; display: flex; align-items: center; gap: 6px; padding: 0 8px;
+    background: var(--bg); color: var(--text);
+    font: 13px/1.4 "Segoe UI", system-ui, sans-serif; user-select: none;
+    border-bottom: 1px solid var(--line);
+  }
+  button {
+    flex: none; width: 30px; height: 30px; display: grid; place-items: center;
+    background: transparent; border: 1px solid transparent; border-radius: 6px;
+    color: var(--text); font-size: 15px; cursor: pointer;
+  }
+  button:hover:not(:disabled) { background: var(--surface); border-color: var(--line); }
+  button:disabled { color: #4a5160; cursor: default; }
+  form { flex: 1; min-width: 0; display: flex; }
+  input {
+    flex: 1; min-width: 0; height: 30px; padding: 0 10px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 6px;
+    color: var(--text); font: inherit; outline: none;
+  }
+  input:focus { border-color: var(--accent); }
+  input::placeholder { color: var(--muted); }
+  #bar { position: absolute; left: 0; top: 47px; height: 2px; width: 0; background: var(--accent); transition: width .2s ease; }
+  #note {
+    position: absolute; right: 10px; top: 54px; max-width: 24rem; padding: 8px 10px;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 8px;
+    color: var(--text); box-shadow: 0 8px 24px rgba(0,0,0,.45);
+  }
+  #note[hidden] { display: none; }
+</style>
+</head>
+<body>
+  <button id="back" title="Back (Alt+←)">&#8592;</button>
+  <button id="forward" title="Forward (Alt+→)">&#8594;</button>
+  <button id="reload" title="Reload (F5)">&#8635;</button>
+  <form id="go">
+    <input id="q" type="text" placeholder="Search the web, or type an address" autocomplete="off" spellcheck="false">
+  </form>
+  <button id="close" title="Close the browser (Esc)">&#10005;</button>
+  <div id="bar"></div>
+  <div id="note" hidden></div>
+  <script src="web.js"></script>
+</body>
+</html>

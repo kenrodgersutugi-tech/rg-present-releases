@@ -184,6 +184,33 @@
     else if (p.item.type === 'countdown') Dialogs.editCountdown(p.item);
   };
 
+  // ---------- presentations ----------
+  /**
+   * Importing a deck takes a moment per slide, so the operator is told what is happening and
+   * what came of it. Nothing touches the audience screen while it runs.
+   */
+  Dialogs.importPresentation = async () => {
+    const hint = document.getElementById('deckHint');
+    const original = hint ? hint.textContent : '';
+    const off = rg.on('decks:progress', (p) => {
+      if (hint) hint.textContent = `Reading ${p.file} — slide ${p.done} of ${p.total}…`;
+    });
+    try {
+      const result = await rg.invoke('decks:import');
+      if (result.added.length) {
+        const slides = result.added.reduce((n, d) => n + d.slides, 0);
+        App.toast(`${result.added.length === 1 ? result.added[0].name : `${result.added.length} presentations`} — ${slides} ${slides === 1 ? 'slide' : 'slides'} ready`);
+      }
+      for (const e of result.errors) App.toast(`${e.file}: ${e.message}`, true);
+      if (result.added.length) Library.loadDecks();
+    } catch (e) {
+      App.toast(String(e.message || e), true);
+    } finally {
+      off();
+      if (hint) hint.textContent = original;
+    }
+  };
+
   // ---------- media picker ----------
   Dialogs.addMedia = async () => {
     const items = await rg.invoke('media:list');

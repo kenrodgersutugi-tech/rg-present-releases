@@ -85,6 +85,20 @@
     if (item.type === 'countdown') {
       return { kind: 'countdown', title: item.title, slides: [{ label: 'Countdown', code: '', text: item.message || '', countdown: item }], theme: App.themeFor(item.themeId) };
     }
+    if (item.type === 'deck') {
+      // Each slide of the presentation is a picture of its own, shown the way any other
+      // picture is. Nothing of PowerPoint is running, so nothing of PowerPoint can appear.
+      const slides = await rg.invoke('decks:slides', item.deckId);
+      return {
+        kind: 'deck',
+        title: item.title,
+        slides: slides.map((rel, i) => ({
+          label: `Slide ${i + 1}`, code: '', text: '',
+          media: { type: 'image', url: rel, fit: 'contain' },
+        })),
+        theme: App.themeFor(item.themeId),
+      };
+    }
     if (item.type === 'media') {
       return { kind: 'media', title: item.title, slides: [{ label: item.mediaType === 'video' ? 'Video' : 'Image', code: '', text: '', media: { type: item.mediaType, url: item.rel } }], theme: App.themeFor(item.themeId) };
     }
@@ -628,7 +642,7 @@
     };
     panel.addEventListener('dragover', (e) => {
       const types = e.dataTransfer.types;
-      if (!types.includes('application/x-rg-item') && !types.includes('application/x-rg-song') && !types.includes('application/x-rg-media')) return;
+      if (!types.includes('application/x-rg-item') && !types.includes('application/x-rg-song') && !types.includes('application/x-rg-media') && !types.includes('application/x-rg-deck')) return;
       e.preventDefault();
       clear();
       const li = e.target.closest('li');
@@ -648,9 +662,11 @@
       const item = e.dataTransfer.getData('application/x-rg-item');
       const song = e.dataTransfer.getData('application/x-rg-song');
       const media = e.dataTransfer.getData('application/x-rg-media');
+      const deck = e.dataTransfer.getData('application/x-rg-deck');
       if (item !== '') App.moveItem(parseInt(item, 10), at);
       else if (song) App.addSong(parseInt(song, 10), at);
       else if (media) App.addMediaItem(JSON.parse(media), at);
+      else if (deck) App.addItem(JSON.parse(deck), at);
     });
   }
 
@@ -708,6 +724,8 @@
       if (e.ctrlKey && e.key.toLowerCase() === 'o') { e.preventDefault(); return Dialogs.openService(); }
       if (e.ctrlKey && e.key.toLowerCase() === 'n') { e.preventDefault(); return App.newService(); }
       if (e.ctrlKey && e.key.toLowerCase() === 'f') { e.preventDefault(); return $('#search').focus(); }
+      // The web browser, on its own window and never on the projector.
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'w') { e.preventDefault(); return rg.invoke('web:open'); }
       // Text size works even while typing in the library search, so it is always to hand.
       if (e.ctrlKey && (e.key === '+' || e.key === '=')) { e.preventDefault(); return App.nudgeTextScale(1); }
       if (e.ctrlKey && (e.key === '-' || e.key === '_')) { e.preventDefault(); return App.nudgeTextScale(-1); }

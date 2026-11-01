@@ -130,6 +130,43 @@
     RGIcons.hydrate(grid);
   };
 
+  // ---------- presentations ----------
+  /**
+   * A deck is a row and a folder of slide pictures. The card shows the first slide, because
+   * that is how an operator recognises last Sunday's notices at a glance.
+   */
+  Library.loadDecks = async () => {
+    const decks = await rg.invoke('decks:list');
+    const grid = $('#deckGrid');
+    grid.innerHTML = '';
+    if (!decks.length) {
+      grid.innerHTML = '<p class="muted">No presentations yet. Add a PowerPoint (.pptx) or a PDF — a PDF comes in looking exactly as it was designed, and needs nothing else installed.</p>';
+      return;
+    }
+    for (const d of decks) {
+      const card = document.createElement('div');
+      card.className = 'media-card';
+      card.draggable = true;
+      const first = RGRender.mediaUrl(`presentations/${d.id}/000.png`);
+      card.innerHTML =
+        `<img class="thumb" src="${first}" loading="lazy">` +
+        `<div class="cap">${App.esc(d.name)} <span class="muted">· ${d.slides} ${d.slides === 1 ? 'slide' : 'slides'}</span></div>` +
+        '<button class="mini del" title="Remove"><i data-icon="trash"></i></button>';
+      const asItem = () => ({ type: 'deck', deckId: d.id, title: d.name, slideCount: d.slides });
+      card.addEventListener('dblclick', () => App.goLiveNow(asItem()));
+      card.addEventListener('click', () => App.setPreview(asItem(), null, 0));
+      card.addEventListener('dragstart', (e) => e.dataTransfer.setData('application/x-rg-deck', JSON.stringify(asItem())));
+      card.querySelector('.del').onclick = async (e) => {
+        e.stopPropagation();
+        if (!confirm(`Remove “${d.name}” from the presentations?`)) return;
+        await rg.invoke('decks:delete', d.id);
+        Library.loadDecks();
+      };
+      grid.appendChild(card);
+    }
+    RGIcons.hydrate(grid);
+  };
+
   // ---------- saved services ----------
   Library.loadServices = async () => {
     const list = await rg.invoke('services:list');
@@ -175,6 +212,7 @@
         $$('#libTabs .tab').forEach((x) => x.classList.toggle('active', x === tab));
         $$('.lib-body').forEach((b) => (b.hidden = b.dataset.body !== tab.dataset.tab));
         if (tab.dataset.tab === 'media') Library.loadMedia();
+        if (tab.dataset.tab === 'presentations') Library.loadDecks();
         if (tab.dataset.tab === 'services') Library.loadServices();
       };
     });

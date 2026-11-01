@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<title>RG-Present — slide rendering</title>
+<style>html,body{margin:0;background:#000}</style>
+</head>
+<body>
+<script>
+// A hidden window whose only job is to turn a presentation into pictures.
+//
+// It runs here rather than in the main process because this is where a canvas lives: no native
+// module to rebuild for each Electron version, and nothing for a church to install. Nobody ever
+// sees this window — it is created hidden, used, and destroyed.
+const path = require('path');
+const pdfjsLib = require('pdfjs-dist/legacy/build/pdf.js');
+pdfjsLib.GlobalWorkerOptions.workerSrc = path.join(
+  path.dirname(require.resolve('pdfjs-dist/legacy/build/pdf.js')),
+  'pdf.worker.js'
+);
+
+/** Every page of a PDF, as a PNG data URL, at `width` pixels across. */
+window.renderPdf = async (base64, width) => {
+  const data = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+  const pdf = await pdfjsLib.getDocument({ data, isEvalSupported: false }).promise;
+  const pages = [];
+
+  for (let number = 1; number <= pdf.numPages; number++) {
+    const page = await pdf.getPage(number);
+    const base = page.getViewport({ scale: 1 });
+    const viewport = page.getViewport({ scale: width / base.width });
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(viewport.width);
+    canvas.height = Math.round(viewport.height);
+    const context = canvas.getContext('2d');
+    // White behind the page: a PDF's own background is usually transparent, and a church
+    // does not want the projector's black showing through the gaps in a slide.
+    context.fillStyle = '#ffffff';
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    await page.render({ canvasContext: context, viewport }).promise;
+    pages.push(canvas.toDataURL('image/png'));
+    page.cleanup();
+  }
+  await pdf.destroy();
+  return pages;
+};
+
+/**
+ * Slides we read out of a .pptx ourselves, drawn plainly: the slide's own picture behind, its
+ * words over the top, sized to fit. Not a copy of PowerPoint's layout — an honest, legible
+ * version of it that works on a computer with no Office installed.
+ */
+window.drawSlides = async (slides, width, height) => {
+  const out = [];
+
+  for (const slide of slides) {
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const ctx = canvas.getContext('2d');
+
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, width, height);
+
+    if (slide.image) {
+      const image = await loadImage(slide.image).catch(() => null);
+      if (image) {
+        // Cover, centred: no stretching, no letterboxed grey.
+        const scale = Math.max(width / image.width, height / image.height);
+        const w = image.width * scale;
+        const h = image.height * scale;
+        ctx.drawImage(image, (width - w) / 2, (height - h) / 2, w, h);
+        // A wash over a photograph, so white words stay readable on it.
+        if (slide.lines.length) {
+          ctx.fillStyle = 'rgba(0,0,0,0.45)';
+          ctx.fillRect(0, 0, width, height);
+        }
+      }
+    }
+
+    if (slide.lines.length) {
+      const [title, ...rest] = slide.lines;
+      const margin = width * 0.08;
+      let y = height * (rest.length ? 0.3 : 0.5);
+
+      y = drawWrapped(ctx, title, {
+        x: width / 2, y, maxWidth: width - margin * 2,
+        size: fit(ctx, title, width - margin * 2, Math.round(height * 0.11), 'bold'),
+        weight: 'bold', lineHeight: 1.18,
+      });
+
+      if (rest.length) {
+        y += height * 0.045;
+        const bodySize = Math.min(Math.round(height * 0.058), Math.round((height * 0.52) / rest.length));
+        for (const line of rest) {
+          y = drawWrapped(ctx, line, {
+            x: width / 2, y, maxWidth: width - margin * 2,
+            size: fit(ctx, line, width - margin * 2, bodySize, '400'),
+            weight: '400', lineHeight: 1.3,
+          });
+          y += bodySize * 0.25;
+        }
+      }
+    }
+
+    out.push(canvas.toDataURL('image/png'));
+  }
+  return out;
+};
+
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = reject;
+    image.src = src;
+  });
+}
+
+/** The largest size at which this line still fits across the slide. */
+function fit(ctx, text, maxWidth, startSize, weight) {
+  let size = startSize;
+  while (size > 14) {
+    ctx.font = `${weight} ${size}px "Segoe UI", system-ui, sans-serif`;
+    if (ctx.measureText(text).width <= maxWidth * 1.9) break; // 1.9: two lines' worth
+    size -= 2;
+  }
+  return size;
+}
+
+function drawWrapped(ctx, text, o) {
+  ctx.font = `${o.weight} ${o.size}px "Segoe UI", system-ui, sans-serif`;
+  ctx.fillStyle = '#ffffff';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.shadowColor = 'rgba(0,0,0,0.6)';
+  ctx.shadowBlur = Math.round(o.size * 0.25);
+
+  const words = String(text).split(/\s+/);
+  let line = '';
+  let y = o.y;
+  for (const word of words) {
+    const next = line ? `${line} ${word}` : word;
+    if (ctx.measureText(next).width > o.maxWidth && line) {
+      ctx.fillText(line, o.x, y);
+      y += o.size * o.lineHeight;
+      line = word;
+    } else {
+      line = next;
+    }
+  }
+  if (line) {
+    ctx.fillText(line, o.x, y);
+    y += o.size * o.lineHeight;
+  }
+  ctx.shadowBlur = 0;
+  return y;
+}
+</script>
+</body>
+</html>

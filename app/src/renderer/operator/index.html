@@ -19,6 +19,7 @@
     <div class="service-name" id="serviceName" title="Click to rename">Untitled service</div>
     <div class="tb-group">
       <button class="tb" data-action="import-hymns" title="Import hymns from TXT, CSV, Word or PowerPoint"><i data-icon="import"></i><span class="lbl">Import</span></button>
+      <button class="tb" data-action="web" title="Search the web (Ctrl+Shift+W)"><i data-icon="globe"></i><span class="lbl">Web</span></button>
       <button class="tb" data-action="themes" title="Themes"><i data-icon="palette"></i><span class="lbl">Themes</span></button>
       <button class="tb" data-action="settings" title="Settings"><i data-icon="gear"></i><span class="lbl">Settings</span></button>
     </div>
@@ -110,6 +111,7 @@
         <button class="tab active" data-tab="songs">Songs</button>
         <button class="tab" data-tab="scripture">Scripture</button>
         <button class="tab" data-tab="media">Media</button>
+        <button class="tab" data-tab="presentations">Presentations</button>
         <button class="tab" data-tab="services">Saved services</button>
       </nav>
       <div class="lib-body" data-body="songs">
@@ -143,6 +145,13 @@
       <div class="lib-body" data-body="media" hidden>
         <div class="media-bar"><button class="btn" data-action="media-import"><i data-icon="plus"></i>Add images or videos</button><span class="muted">Double-click puts it on the screen · drag it into the service to keep it · the picture button makes it the background of the item in Preview.</span></div>
         <div class="media-grid" id="mediaGrid"></div>
+      </div>
+      <div class="lib-body" data-body="presentations" hidden>
+        <div class="media-bar">
+          <button class="btn" data-action="deck-import"><i data-icon="plus"></i>Add a PowerPoint or PDF</button>
+          <span class="muted" id="deckHint">Each slide is kept as a picture, so a deck still shows after the file has gone home. Double-click puts it on the screen · drag it into the service.</span>
+        </div>
+        <div class="media-grid" id="deckGrid"></div>
       </div>
       <div class="lib-body" data-body="services" hidden>
         <div class="services-list" id="servicesList"></div>

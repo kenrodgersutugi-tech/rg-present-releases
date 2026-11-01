@@ -5,6 +5,8 @@ const { pathToFileURL } = require('url');
 const store = require('./store');
 const db = require('./db');
 const packs = require('./packs');
+const browser = require('./browser');
+const presentations = require('./presentations');
 const importers = require('./importers');
 const bibles = require('./bibles');
 const updater = require('./updater');
@@ -348,6 +350,52 @@ function registerIpc() {
     }
     return added;
   });
+  // ---------------- presentations ----------------
+  handle('decks:list', () => db.listDecks());
+  handle('decks:import', async () => {
+    const r = await dialog.showOpenDialog(win.operator, {
+      title: 'Add a presentation',
+      properties: ['openFile', 'multiSelections'],
+      filters: [{ name: 'Presentations', extensions: ['pptx', 'ppt', 'pdf'] }],
+    });
+    if (r.canceled) return { added: [], errors: [] };
+
+    const added = [];
+    const errors = [];
+    for (const file of r.filePaths) {
+      try {
+        const deck = await presentations.importPresentation(file, (done, total) => {
+          tellOperator('decks:progress', { file: path.basename(file), done, total });
+        });
+        db.addDeck(deck);
+        added.push(db.getDeck(deck.id));
+      } catch (e) {
+        errors.push({ file: path.basename(file), message: String(e.message || e) });
+      }
+    }
+    return { added, errors };
+  });
+  handle('decks:slides', (id) => {
+    const deck = db.getDeck(id);
+    return deck ? presentations.deckSlides(deck.id, deck.slides) : [];
+  });
+  handle('decks:delete', (id) => {
+    const deck = db.deleteDeck(id);
+    if (deck) presentations.removeDeck(deck.id);
+  });
+
+  // ---------------- the web browser ----------------
+  // Its own window on the operator's screen. The page is sandboxed in a session of its own
+  // and cannot reach the service, the library or the audience screen.
+  browser.onPictureSaved((picture) => db.addMedia({ ...picture, folder: 'From the web' }));
+  handle('web:open', (input) => browser.openBrowser(input, win.operator));
+  handle('web:close', () => browser.closeBrowser());
+  handle('web:navigate', (input) => browser.navigate(input));
+  handle('web:back', () => browser.back());
+  handle('web:forward', () => browser.forward());
+  handle('web:reload', () => browser.reload());
+  handle('web:state', () => browser.browserState());
+
   handle('media:delete', (id) => {
     const m = db.deleteMedia(id);
     if (m && m.rel_path.startsWith('user/')) fs.rmSync(path.join(paths.media, m.rel_path), { force: true });

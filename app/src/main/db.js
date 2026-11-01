@@ -39,6 +39,19 @@ const MIGRATIONS = [
    CREATE TABLE services (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT, data TEXT, updated_at TEXT);
    CREATE TABLE packs (id TEXT PRIMARY KEY, name TEXT, version TEXT, type TEXT, installed_at TEXT, manifest TEXT);
    CREATE TABLE changelog (id INTEGER PRIMARY KEY AUTOINCREMENT, at TEXT, scope TEXT, version TEXT, message TEXT);`,
+  // v2: presentations. A deck is a folder of slide pictures under data/presentations/<id>,
+  // plus a row here. The pictures are ours once imported, so a deck still presents after the
+  // PowerPoint it came from has been deleted or the memory stick has gone home.
+  `CREATE TABLE decks (
+     id TEXT PRIMARY KEY,
+     name TEXT NOT NULL,
+     source TEXT,
+     kind TEXT,
+     slides INTEGER NOT NULL DEFAULT 0,
+     folder TEXT,
+     created_at TEXT
+   );
+   CREATE INDEX idx_decks_name ON decks(name COLLATE NOCASE);`,
 ];
 const SCHEMA_VERSION = MIGRATIONS.length;
 
@@ -278,6 +291,29 @@ function deleteMedia(id) {
   return m;
 }
 
+// ---------- presentations ----------
+
+function listDecks() {
+  return all('SELECT * FROM decks ORDER BY created_at DESC');
+}
+
+function getDeck(id) {
+  return one('SELECT * FROM decks WHERE id = ?', [id]);
+}
+
+function addDeck({ id, name, source, kind, slides, folder }) {
+  run('INSERT OR REPLACE INTO decks(id, name, source, kind, slides, folder, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)', [
+    id, name, source || null, kind || 'pptx', slides || 0, folder || 'Presentations', now(),
+  ]);
+  return getDeck(id);
+}
+
+function deleteDeck(id) {
+  const d = getDeck(id);
+  run('DELETE FROM decks WHERE id = ?', [id]);
+  return d;
+}
+
 // ---------- services ----------
 
 function listServices() {
@@ -328,5 +364,6 @@ module.exports = {
   listThemes, saveTheme, deleteTheme,
   listMedia, addMedia, deleteMedia,
   listServices, saveService, getService, deleteService,
+  listDecks, getDeck, addDeck, deleteDeck,
   listPacks, getPack, recordPack, listChangelog,
 };

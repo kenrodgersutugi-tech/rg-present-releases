@@ -12,9 +12,11 @@ const INVOKE = new Set([
   'import:pick', 'import:parse', 'import:commit',
   'updates:status', 'updates:check', 'updates:download-app', 'updates:apply-app', 'updates:cancel',
   'updates:install-pack', 'updates:rollback',
+  'decks:list', 'decks:import', 'decks:slides', 'decks:delete',
+  'web:open', 'web:close', 'web:navigate', 'web:back', 'web:forward', 'web:reload', 'web:state',
   'bible:list', 'bible:structure', 'bible:chapter', 'bible:passage', 'bible:search', 'bible:remove', 'bible:pick', 'bible:install-pending',
 ]);
-const EVENTS = new Set(['output:render', 'windows:state', 'updates:progress', 'updates:outcome', 'updates:auto', 'content:changed']);
+const EVENTS = new Set(['output:render', 'windows:state', 'updates:progress', 'updates:outcome', 'updates:auto', 'content:changed', 'web:state', 'web:error', 'decks:progress']);
 
 contextBridge.exposeInMainWorld('rg', {
   invoke(channel, ...args) {
