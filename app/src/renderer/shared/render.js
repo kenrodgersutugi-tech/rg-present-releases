@@ -99,7 +99,10 @@
     const t = p.theme || {};
     const f = t.font || {};
     const zoom = textScale(p);
-    const family = [f.family ? `"${f.family}"` : '', p.fontFallback || '"Segoe UI", sans-serif'].filter(Boolean).join(', ');
+    // The theme's own font first, then the church's default for every slide, then the
+    // fallbacks that carry Kimeru's ĩ and ũ.
+    const chosen = f.family || p.defaultFamily || '';
+    const family = [chosen ? `"${chosen}"` : '', p.fontFallback || '"Segoe UI", sans-serif'].filter(Boolean).join(', ');
     const box = el('div', 'rg-box rg-countdown', layer);
     box.style.cssText = 'left:8%;top:12%;width:84%;height:70%;flex-direction:column;align-items:center;justify-content:center;gap:28px';
     const clock = el('div', 'rg-clock', box);

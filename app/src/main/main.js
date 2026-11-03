@@ -7,6 +7,7 @@ const db = require('./db');
 const packs = require('./packs');
 const browser = require('./browser');
 const presentations = require('./presentations');
+const ai = require('./ai');
 const importers = require('./importers');
 const bibles = require('./bibles');
 const updater = require('./updater');
@@ -368,6 +369,42 @@ function registerIpc() {
     }
     return added;
   });
+  // ---------------- generated backgrounds ----------------
+  handle('ai:status', () => {
+    const s = store.loadSettings();
+    return { ready: !!(s.geminiApiKey || '').trim(), style: s.geminiStyle || 'photo' };
+  });
+  /**
+   * Make a background from the theme of the service, keep it in the media library, and build a
+   * theme around it so it can go on the screen straight away.
+   */
+  handle('ai:background', async ({ theme, style }) => {
+    const s = store.loadSettings();
+    const picture = await ai.generateBackground({
+      apiKey: s.geminiApiKey,
+      theme,
+      style: style || s.geminiStyle,
+      aspect: outputAspect() >= 1.7 ? '16:9' : '4:3',
+    });
+    db.addMedia({ name: picture.name, rel_path: picture.rel_path, type: 'image', folder: picture.folder });
+
+    // A theme that reads well over a picture: bright words, a shadow, and enough darkening
+    // that a congregation at the back can read them whatever the picture turned out like.
+    const id = `ai-${Date.now().toString(36)}`;
+    db.saveTheme({
+      id,
+      name: String(theme).trim().slice(0, 60) || 'Generated theme',
+      background: { type: 'image', value: picture.rel_path },
+      overlay: 'rgba(0,0,0,0.38)',
+      font: { family: s.slideFont || 'Segoe UI', weight: 700, color: '#ffffff', maxSize: 92, minSize: 30, lineHeight: 1.25, shadow: true },
+      align: 'center',
+      valign: 'middle',
+      box: { x: 8, y: 12, w: 84, h: 70 },
+      footer: { show: false },
+    });
+    return { media: picture, themeId: id, title: String(theme).trim() };
+  });
+
   // ---------------- presentations ----------------
   handle('decks:list', () => db.listDecks());
   handle('decks:import', async () => {

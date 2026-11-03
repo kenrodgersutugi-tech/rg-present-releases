@@ -21,6 +21,7 @@
     'import-hymns': () => Dialogs.importHymns(),
     web: () => rg.invoke('web:open'),
     'web-hide': () => rg.invoke('web:hide'),
+    'ai-background': () => Dialogs.generateBackground(App.service && App.service.name !== 'Untitled service' ? App.service.name : ''),
     'deck-import': () => Dialogs.importPresentation(),
     themes: () => Dialogs.themes(),
     settings: () => Dialogs.settings(),

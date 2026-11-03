@@ -47,6 +47,14 @@ const DEFAULT_SETTINGS = {
   autoChorus: true,
   textScale: 1, // how big the words are on the audience screen (0.4-3; the operator's A- / A+ buttons)
   fontFallback: '"Segoe UI", "Noto Sans", "Arial Unicode MS", sans-serif',
+  // The face every theme uses unless that theme names its own. One place to change the look
+  // of every slide in the church, without editing each theme.
+  slideFont: '',
+  // Optional, and empty until a church chooses to use it: their own Google Gemini key, used
+  // only to generate background pictures. It is kept in this file on their computer and sent
+  // to Google and nowhere else.
+  geminiApiKey: '',
+  geminiStyle: 'photo',
   chorusWords: [],
   logoMedia: 'packs/rg-core/logo.svg',
   autoAdvanceSeconds: 8,

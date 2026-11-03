@@ -224,6 +224,79 @@
     });
   }
 
+  /**
+   * A background made to order from the theme of the service.
+   *
+   * Optional, and only here when the church has put its own Gemini key in Settings. What comes
+   * back is a picture in the media library and a theme built around it, so it can be on the
+   * screen a few seconds later — and from then on it is a file on their own computer that
+   * needs no internet at all.
+   */
+  Dialogs.generateBackground = async (prefill) => {
+    const status = await rg.invoke('ai:status');
+    if (!status.ready) {
+      const go = confirm('Generating backgrounds needs a Google Gemini key of your own.\n\nOpen Settings to put one in?');
+      if (go) Dialogs.settings();
+      return;
+    }
+
+    const d = modal({
+      title: 'Generate a background',
+      body: `<div class="split-2">
+        <div class="form-grid">
+          <label class="field full"><span>Theme of the service</span>
+            <input id="aiTheme" value="${esc(prefill || '')}" placeholder="Jesus Leads Us" autocomplete="off">
+            <small>What the service is about, in a few words. It is used to describe the picture, and names the theme that is created.</small></label>
+          <label class="field"><span>Look</span>
+            <select id="aiStyle">${[['photo', 'Photograph'], ['landscape', 'Landscape'], ['painted', 'Painted'], ['abstract', 'Abstract light and colour']].map(([k, l]) => `<option value="${k}" ${status.style === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+          <div class="field full"><small id="aiNote" class="muted">The picture is made to leave the middle quiet, so the words stay readable over it.</small></div>
+        </div>
+        <div class="editor-preview"><div class="monitor" id="aiMonitor"></div></div>
+      </div>`,
+      footer: `<div class="left"><button class="btn" data-again hidden>Generate another</button></div>
+        <button class="btn" data-cancel>Close</button><button class="btn primary" data-go>Generate</button>`,
+    });
+
+    const mon = RGRender.createStage(d.q('#aiMonitor'), { noTransitions: true });
+    mon.show({ mode: 'blank', transition: { type: 'cut' } });
+    let made = null;
+
+    const run = async () => {
+      const theme = d.q('#aiTheme').value.trim();
+      if (!theme) return App.toast('Type the theme of the service first', true);
+      d.q('[data-go]').disabled = true;
+      d.q('#aiNote').textContent = 'Asking Google for a picture… this takes a few seconds.';
+      try {
+        made = await rg.invoke('ai:background', { theme, style: d.q('#aiStyle').value });
+        await App.loadThemes();
+        const t = App.themes.get(made.themeId);
+        mon.show({ mode: 'slide', text: theme, theme: t, item: { kind: 'song', title: theme }, fontFallback: App.settings.fontFallback, transition: { type: 'cut' } });
+        d.q('#aiNote').textContent = `Saved as “${made.media.name}” in Media, and the theme “${theme}” is ready to use.`;
+        d.q('[data-again]').hidden = false;
+        d.q('[data-go]').textContent = 'Use it for this service';
+      } catch (e) {
+        d.q('#aiNote').textContent = App.errorText(e);
+        App.toast(App.errorText(e), true);
+      } finally {
+        d.q('[data-go]').disabled = false;
+      }
+    };
+
+    d.q('[data-go]').onclick = async () => {
+      if (!made) return run();
+      // Second press: make it the theme the service uses, and close.
+      App.settings = await rg.invoke('settings:set', { defaultThemeId: made.themeId });
+      d.close();
+      App.toast(`“${made.title}” is now the theme for this service`);
+      await App.loadThemes();
+      await App.refreshPreview();
+      if (window.Library && Library.loadMedia) Library.loadMedia();
+    };
+    d.q('[data-again]').onclick = () => { made = null; d.q('[data-go]').textContent = 'Generate'; run(); };
+    d.q('[data-cancel]').onclick = () => d.close();
+    d.q('#aiTheme').focus();
+  };
+
   // ---------- text / announcement slide ----------
   Dialogs.editCustom = (item) => {
     const it = item || { type: 'custom', title: 'Announcement', text: '', themeId: '' };
@@ -679,6 +752,15 @@
         </div>
         <div class="section-title">Language</div>
         <div class="form-grid">
+          <label class="field full"><span>Gemini key, for generated backgrounds <span class="muted">(optional)</span></span>
+            <input type="password" data-k="geminiApiKey" value="${esc(s.geminiApiKey || '')}" placeholder="Leave empty to turn the feature off" autocomplete="off" spellcheck="false">
+            <small>Only used to make background pictures from the theme of a service. Kept on this computer and sent to Google and nowhere else. Get a key at aistudio.google.com — everything else in RG-Present works without it.</small></label>
+          <label class="field"><span>Look of generated pictures</span>
+            <select data-k="geminiStyle">${[['photo', 'Photograph'], ['landscape', 'Landscape'], ['painted', 'Painted'], ['abstract', 'Abstract light and colour']].map(([k, l]) => `<option value="${k}" ${(s.geminiStyle || 'photo') === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+          <label class="field full"><span>Font for every slide</span>
+            <input data-k="slideFont" list="slideFontList" value="${esc(s.slideFont || '')}" placeholder="Leave empty to let each theme choose">
+            <datalist id="slideFontList">${['Segoe UI', 'Segoe UI Semibold', 'Calibri', 'Cambria', 'Georgia', 'Arial', 'Verdana', 'Tahoma', 'Trebuchet MS', 'Bahnschrift', 'Candara', 'Constantia', 'Corbel', 'Palatino Linotype', 'Times New Roman', 'Book Antiqua'].map((x) => `<option value="${x}">`).join('')}</datalist>
+            <small>Used by any theme that does not name a font of its own. A theme's own font always wins.</small></label>
           <label class="field full"><span>Fallback fonts (for Kimeru ĩ ũ and other letters)</span><input data-k="fontFallback" value="${esc(s.fontFallback)}"></label>
           <label class="field full"><span>Extra words that mean “chorus” when importing</span><input data-k="chorusWords" value="${esc((s.chorusWords || []).join(', '))}" placeholder="e.g. Kiitiko, Korasi"></label>
         </div>
@@ -734,6 +816,9 @@
         autoChorus: v('autoChorus').checked,
         textScale: +v('textScale').value || 1,
         logoMedia: v('logoMedia').value || s.logoMedia,
+        slideFont: v('slideFont').value.trim(),
+        geminiApiKey: v('geminiApiKey').value.trim(),
+        geminiStyle: v('geminiStyle').value,
         fontFallback: v('fontFallback').value.trim() || s.fontFallback,
         chorusWords: v('chorusWords').value.split(',').map((x) => x.trim()).filter(Boolean),
         defaultBibleId: (v('defaultBibleId') && v('defaultBibleId').value) || s.defaultBibleId,

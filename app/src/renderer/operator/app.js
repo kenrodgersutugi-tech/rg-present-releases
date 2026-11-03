@@ -23,6 +23,12 @@
 
   // ---------- helpers ----------
   let toastTimer;
+  /** The sentence inside an error, without Electron's IPC wrapper around it. */
+  App.errorText = (e) => String((e && e.message) || e || '')
+    .replace(/^Error invoking remote method '[^']*':\s*/, '')
+    .replace(/^(Error|TypeError):\s*/, '')
+    .trim();
+
   App.toast = (msg, isError) => {
     const t = $('#toast');
     t.textContent = msg;
@@ -145,6 +151,7 @@
       textScale: App.settings.textScale || 1,
       refSize: App.settings.scriptureRefSize || 54,
       fontFallback: App.settings.fontFallback,
+      defaultFamily: App.settings.slideFont || '',
       transition: { type: t.type || 'fade', ms: t.ms || 450 },
       next: next ? next.text || next.label : '',
       cover: null,

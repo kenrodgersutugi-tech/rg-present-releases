@@ -169,7 +169,7 @@
           App.toast(`${updated.name} — ${updated.slides} ${updated.slides === 1 ? 'slide' : 'slides'} from the file`);
           Library.loadDecks();
         } catch (err) {
-          App.toast(String(err.message || err).replace(/^Error: /, ''), true);
+          App.toast(App.errorText(err), true);
         }
       };
       card.querySelector('.del').onclick = async (e) => {
