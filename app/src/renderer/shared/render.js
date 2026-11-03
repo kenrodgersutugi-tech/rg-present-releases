@@ -43,7 +43,13 @@
   function buildBackground(p) {
     const layer = el('div', 'rg-layer rg-bg');
     if (p.mode === 'media' && p.media) {
-      addMedia(layer, p.media.type, mediaUrl(p.media.url), p.media.fill ? 'cover' : 'contain', p.media);
+      // A picture fills the screen. A phone photograph is not the shape of a projector, and a
+      // congregation should see a picture, not a picture with black bars round it — so it is
+      // scaled to cover and the overflow is cropped, which is what every other presentation
+      // program does. A presentation slide is the exception: cropping one would cut the words
+      // off it, so a deck asks for 'contain' by name.
+      const fit = p.media.fit === 'contain' ? 'contain' : 'cover';
+      addMedia(layer, p.media.type, mediaUrl(p.media.url), fit, p.media);
       return layer;
     }
     const b = (p.theme && p.theme.background) || { type: 'color', value: '#000' };
@@ -131,7 +137,10 @@
       `align-items:${{ top: 'flex-start', middle: 'center', bottom: 'flex-end' }[t.valign || 'middle']};` +
       `justify-content:${{ left: 'flex-start', center: 'center', right: 'flex-end' }[t.align || 'center']};`;
     const text = el('div', 'rg-text', boxEl);
-    text.textContent = p.text;
+    // Words the operator styled individually keep their colour, face and slant; a line with no
+    // styling in it is still just text, so nothing changes for the songs already in the library.
+    if (typeof RGRich !== 'undefined') RGRich.render(text, p.text);
+    else text.textContent = p.text;
     const family = [f.family ? `"${f.family}"` : '', p.fontFallback || '"Segoe UI", sans-serif'].filter(Boolean).join(', ');
     text.style.cssText = `font-family:${family};font-weight:${f.weight || 600};color:${f.color || '#fff'};` +
       `line-height:${f.lineHeight || 1.25};text-align:${t.align || 'center'};` +

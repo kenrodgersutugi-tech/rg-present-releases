@@ -53,10 +53,14 @@
       row.className = 'song-row' + (i === Library.sel ? ' sel' : '');
       row.draggable = true;
       row.innerHTML = `<span class="n">${App.esc(s.number || '')}</span><span>${App.esc(s.title)}</span><span class="aka">${App.esc(s.alt_title || '')}</span><span class="fd">${App.esc(s.folder || '')}</span>`;
-      row.addEventListener('click', () => select(i));
-      // Double-click puts the song on the screen at once, without adding it to the service;
+      const asLive = () => ({ type: 'song', songId: s.id, title: s.title, number: s.number, folder: s.folder, language: s.language });
+      // Tapping twice puts the song on the screen at once, without adding it to the service;
       // "Add to service", Enter and dragging are the ways to put it in the running order.
-      row.addEventListener('dblclick', () => App.goLiveNow({ type: 'song', songId: s.id, title: s.title, number: s.number, folder: s.folder, language: s.language }));
+      row.addEventListener('click', () => {
+        if (App.doubleTapped(`song:${s.id}`)) return App.goLiveNow(asLive());
+        select(i);
+      });
+      row.addEventListener('dblclick', () => App.goLiveNow(asLive()));
       row.addEventListener('dragstart', (e) => {
         e.dataTransfer.setData('application/x-rg-song', String(s.id));
         e.dataTransfer.effectAllowed = 'copy';
@@ -87,7 +91,7 @@
         <button class="btn small" data-a="preview">Preview</button>
       </div>
       <h3>${App.esc(s.title)}</h3><div class="meta">${meta}${s.tags.includes('proofread') ? ' · <span style="color:var(--gold)">needs proofreading</span>' : ''}</div>
-      ${s.sections.map((x) => `<div class="sec ${x.type}"><b>${App.esc(x.label)}</b><p>${App.esc(x.text)}</p></div>`).join('')}`;
+      ${s.sections.map((x) => `<div class="sec ${x.type}"><b>${App.esc(x.label)}</b><p>${App.esc(RGRich.strip(x.text))}</p></div>`).join('')}`;
     RGIcons.hydrate(box);
     const asItem = () => ({ type: 'song', songId: s.id, title: s.title, number: s.number, folder: s.folder, language: s.language });
     box.querySelector('[data-a="add"]').onclick = () => App.addSong(s.id);

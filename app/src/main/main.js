@@ -37,11 +37,21 @@ function webPrefs() {
 
 function createOperator() {
   const s = store.loadSettings();
+  // Never larger than the screen it opens on. A church laptop is often 1366x768, and a window
+  // asking for 1480x920 there hangs off the bottom and the right the moment anyone un-maximises
+  // it — with the Go Live button somewhere past the edge of the screen.
+  const area = screen.getPrimaryDisplay().workArea;
+  const width = Math.min(1480, area.width);
+  const height = Math.min(920, area.height);
   win.operator = new BrowserWindow({
-    width: 1480,
-    height: 920,
-    minWidth: 1100,
-    minHeight: 680,
+    width,
+    height,
+    x: Math.round(area.x + (area.width - width) / 2),
+    y: Math.round(area.y + (area.height - height) / 2),
+    // Small enough for the smallest laptop a church is likely to use, so the window can always
+    // be made to fit the screen.
+    minWidth: Math.min(1024, area.width),
+    minHeight: Math.min(640, area.height),
     title: 'RG-Present',
     icon: ICON,
     backgroundColor: s.uiTheme === 'light' ? '#f4f3ef' : '#12141a',

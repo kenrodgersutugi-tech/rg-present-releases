@@ -5,6 +5,7 @@ const path = require('path');
 const initSqlJs = require('sql.js');
 const { paths, writeFileAtomic } = require('./store');
 const L = require('../renderer/shared/lyrics');
+const RGRich = require('../renderer/shared/richtext');
 
 // Each entry upgrades the schema by one version. Never edit a shipped migration; append a new one.
 const MIGRATIONS = [
@@ -169,7 +170,9 @@ function rowToSong(r) {
 }
 
 function buildSearch(s) {
-  const text = (s.sections || []).map((x) => x.text).join(' ');
+  // Styling tags are not words: a hymn with {c:#ffd166}holy{/c} in it must still be found by
+  // searching for "holy".
+  const text = (s.sections || []).map((x) => RGRich.strip(x.text)).join(' ');
   return L.searchNormalize([s.number, s.title, s.alt_title, s.author, (s.tags || []).join(' '), text].join(' '));
 }
 

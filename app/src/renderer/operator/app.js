@@ -121,6 +121,9 @@
     // A picture or video chosen for this item wins over the theme's own background; the words,
     // the song or passage footer and the theme's overlay stay exactly as they are.
     r.theme = App.themeWithBackground(r.theme, item);
+    // The operator's own name for this line of the service. It belongs on the operator's
+    // screen only: the footer the congregation reads still carries the hymn's real title.
+    if (item.label) r.label = item.label;
     return r;
   };
 
@@ -185,7 +188,7 @@
   App.setPreview = async (item, index, slideIndex) => {
     const r = await App.resolve(item);
     App.preview = { item, index, r, slide: Math.min(slideIndex || 0, Math.max(0, r.slides.length - 1)) };
-    $('#previewTitle').textContent = r.title + (r.number ? `  ·  ${r.number}` : '');
+    $('#previewTitle').textContent = (r.label || r.title) + (r.number ? `  ·  ${r.number}` : '');
     renderSlides($('#previewSlides'), r, App.preview.slide, (i) => App.previewSlide(i), (i) => { App.previewSlide(i); App.goLive(); });
     App.previewStage.show(App.payload(r, App.preview.slide, { transition: { type: 'cut' } }));
     App.renderSchedule();
@@ -264,7 +267,7 @@
   // ---------- live ----------
   function renderLiveSlides() {
     renderSlides($('#liveSlides'), App.live.r, App.live.slide, (i) => App.liveSlide(i));
-    $('#liveTitle').textContent = App.live.r.title + (App.live.r.number ? `  ·  ${App.live.r.number}` : '');
+    $('#liveTitle').textContent = (App.live.r.label || App.live.r.title) + (App.live.r.number ? `  ·  ${App.live.r.number}` : '');
   }
 
   App.goLive = async (item, index, slide) => {
@@ -288,6 +291,22 @@
    * Put something on the screen at once without it joining the service — a song called out from
    * the floor, an announcement, a picture. It is previewed as well, so the next slides are to hand.
    */
+  /**
+   * Was this the second tap on the same thing, just now?
+   *
+   * The browser's own dblclick is not good enough here: a single click redraws the song list
+   * and the verse list, so the second click lands on a replaced element and the double-click
+   * is lost — which is exactly the "sometimes it does not respond" an operator hits mid-service.
+   * Counting taps against the item's own id instead of the element survives any redraw.
+   */
+  let lastTap = { key: null, at: 0 };
+  App.doubleTapped = (key, within = 450) => {
+    const now = Date.now();
+    const same = lastTap.key === key && now - lastTap.at < within;
+    lastTap = same ? { key: null, at: 0 } : { key, at: now };
+    return same;
+  };
+
   App.goLiveNow = async (item) => {
     await App.setPreview(item, null, 0);
     await App.goLive(item, null, 0);
@@ -351,7 +370,7 @@
     if (App.service.items.includes(item)) App.markDirty();
     const was = App.live.slide;
     App.live.r = await App.resolve(item);
-    $('#liveTitle').textContent = App.live.r.title;
+    $('#liveTitle').textContent = App.live.r.label || App.live.r.title;
     App.liveSlide(Math.min(was + 1, App.live.r.slides.length - 1));
     renderLiveSlides();
     markSel($('#liveSlides'), App.live.slide);
@@ -587,6 +606,25 @@
     App.setPreview(item, index, 0);
   };
 
+  /**
+   * Name a line of the service — "First reading", "Offertory", "Notices".
+   *
+   * It renames the line only: the song or passage it points at is untouched, and clearing the
+   * name puts the real title back.
+   */
+  App.renameItem = async (i) => {
+    const it = App.service.items[i];
+    if (!it) return;
+    const name = await App.prompt('Name this line', 'Shown in the order of service', it.label || it.title || '');
+    if (name === null) return;
+    const clean = String(name).trim();
+    if (!clean || clean === it.title) delete it.label;
+    else it.label = clean;
+    App.markDirty();
+    App.renderSchedule();
+    if (App.preview && App.preview.item === it) App.renderPreviewHeader && App.renderPreviewHeader();
+  };
+
   App.removeItem = (i) => {
     App.service.items.splice(i, 1);
     if (App.preview && App.preview.index === i) App.preview.index = null;
@@ -621,11 +659,17 @@
         : it.type === 'scripture' ? `Scripture · ${it.abbrev || ''}`
         : it.type === 'countdown' ? (it.mode === 'clock' ? `Counts down to ${it.at}` : `${it.minutes} minute countdown`)
         : it.type === 'custom' ? 'Text slide' : 'Media';
+      // A church's order of service says "First reading", not "John 3:16-18". The operator's
+      // own name for the line wins; what it actually is drops to the line underneath.
+      const shown = it.label || it.title;
+      const under = it.label ? [it.title, sub].filter(Boolean).join(' · ') : sub;
       li.innerHTML = `<i class="grip" data-icon="grip"></i><span class="kind ${it.type}"><i data-icon="${itemIcon(it)}"></i></span>
-        <span class="t"><b>${App.esc(it.title)}</b><small>${App.esc(sub)}</small></span>
+        <span class="t"><b>${App.esc(shown)}</b><small>${App.esc(under)}</small></span>
+        <button class="mini ren" title="Name this line of the service (F2)"><i data-icon="edit"></i></button>
         <button class="mini rm" title="Remove"><i data-icon="x"></i></button>`;
       li.addEventListener('click', (e) => {
         if (e.target.closest('.rm')) return App.removeItem(i);
+        if (e.target.closest('.ren')) return App.renameItem(i);
         App.setPreview(it, i, 0);
       });
       li.addEventListener('dblclick', (e) => {
@@ -735,6 +779,11 @@
       if (e.ctrlKey && e.key.toLowerCase() === 'o') { e.preventDefault(); return Dialogs.openService(); }
       if (e.ctrlKey && e.key.toLowerCase() === 'n') { e.preventDefault(); return App.newService(); }
       if (e.ctrlKey && e.key.toLowerCase() === 'f') { e.preventDefault(); return $('#search').focus(); }
+      // F2 names the line of the service that is in Preview, the way a file is renamed anywhere.
+      if (e.key === 'F2' && App.preview && App.preview.index != null) {
+        e.preventDefault();
+        return App.renameItem(App.preview.index);
+      }
       // The web browser, on its own window and never on the projector.
       if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'w') { e.preventDefault(); return rg.invoke('web:open'); }
       // Text size works even while typing in the library search, so it is always to hand.
@@ -772,8 +821,41 @@
   function setupSplitters() {
     const ws = $('#workspace');
     const saved = (() => { try { return JSON.parse(localStorage.getItem('rg.layout') || '{}'); } catch (_) { return {}; } })();
+    /**
+     * Panel sizes saved on one screen must not break the layout on another: a church that set
+     * these up on an office monitor and then carries the laptop to the hall would otherwise
+     * find the library squeezed to nothing, or the schedule wider than the window.
+     */
+    const clamp = () => {
+      const w = ws.clientWidth || window.innerWidth;
+      const h = ws.clientHeight || window.innerHeight;
+      const px = (k, fallback) => parseFloat(ws.style.getPropertyValue(k)) || fallback;
+      const schedule = Math.max(200, Math.min(px('--schedule-w', 300), Math.round(w * 0.34)));
+      const preview = Math.max(300, Math.min(px('--preview-w', 520), Math.round(w - schedule - 300)));
+      const library = Math.max(170, Math.min(px('--library-h', 280), Math.round(h - 300)));
+      ws.style.setProperty('--schedule-w', `${Math.round(schedule)}px`);
+      ws.style.setProperty('--preview-w', `${Math.round(preview)}px`);
+      ws.style.setProperty('--library-h', `${Math.round(library)}px`);
+    };
     for (const [k, v] of Object.entries(saved)) ws.style.setProperty(k, v);
+    clamp();
+    // And again whenever the window changes shape, including moving to the projector screen.
+    window.addEventListener('resize', () => {
+      clamp();
+      App.liveStage.refit();
+      App.previewStage.refit();
+    });
     $$('.splitter').forEach((sp) => {
+      // Double-click a divider to put it back where it started.
+      sp.addEventListener('dblclick', () => {
+        const kind = sp.dataset.split;
+        if (kind === 'schedule') ws.style.removeProperty('--schedule-w');
+        if (kind === 'preview') ws.style.removeProperty('--preview-w');
+        if (kind === 'library') ws.style.removeProperty('--library-h');
+        try { localStorage.removeItem('rg.layout'); } catch (_) { /* storage unavailable */ }
+        App.liveStage.refit();
+        App.previewStage.refit();
+      });
       sp.addEventListener('mousedown', (e) => {
         e.preventDefault();
         sp.classList.add('dragging');

@@ -156,8 +156,15 @@
     list.addEventListener('pointerup', end);
     list.addEventListener('pointercancel', end);
 
-    // Double-tap puts that verse on the screen at once, leaving the service and preview alone.
-    // (To take a whole range live, drag it and use "Go live" beside it.)
+    // Tapping a verse twice puts it on the screen at once, leaving the service and the preview
+    // alone. The list redraws on the first tap, so this counts taps against the verse number
+    // rather than trusting the browser to match two clicks on the same element.
+    list.addEventListener('click', (e) => {
+      const row = e.target.closest('.verse-row');
+      if (row && App.doubleTapped(`verse:${S.bibleId}:${S.book}:${S.chapter}:${row.dataset.v}`)) {
+        S.takeLive(+row.dataset.v);
+      }
+    });
     list.addEventListener('dblclick', (e) => {
       const row = e.target.closest('.verse-row');
       if (row) S.takeLive(+row.dataset.v);

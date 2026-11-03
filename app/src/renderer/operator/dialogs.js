@@ -87,8 +87,25 @@
           <label class="field"><span>Order</span><input id="fSeq" value="${esc(s.sequence || '')}" placeholder="e.g. V1 C V2 C B C (blank = automatic)"></label>
           <label class="field"><span>Theme</span><select id="fTheme">${themeOptions(s.theme_id, true)}</select></label>
           <label class="field"><span>Translation link</span><input id="fLink" value="${esc(s.link_key || '')}" placeholder="same key on the English and Kimeru song"><small>Songs sharing this key get the EN/KIM switch in Preview.</small></label>
-          <label class="field full"><span>Lyrics</span><textarea id="fLyrics" rows="16" spellcheck="false">${esc(L.sectionsToText(s.sections))}</textarea>
-            <small>Start sections with [Verse 1], [Chorus], [Bridge]… A blank line inside a section starts a new slide. Untagged stanzas become verses.</small></label>
+          <label class="field full"><span>Lyrics</span>
+            <div class="rich-bar" id="fRich">
+              <button type="button" class="mini" data-rich="b" title="Bold the selected words (Ctrl+B)"><b>B</b></button>
+              <button type="button" class="mini" data-rich="i" title="Italic (Ctrl+I)"><i>I</i></button>
+              <button type="button" class="mini" data-rich="u" title="Underline (Ctrl+U)"><u>U</u></button>
+              <label class="rich-colour" title="Colour the selected words"><input type="color" data-rich-colour value="#ffd166"><span>Colour</span></label>
+              <select data-rich-font title="Face for the selected words">
+                <option value="">Font…</option>
+                ${['Segoe UI', 'Georgia', 'Cambria', 'Calibri', 'Times New Roman', 'Trebuchet MS', 'Verdana', 'Bahnschrift'].map((f) => `<option value="${esc(f)}">${esc(f)}</option>`).join('')}
+              </select>
+              <select data-rich-size title="Size of the selected words, against the rest of the slide">
+                <option value="">Size…</option>
+                ${[70, 85, 115, 130, 160].map((n) => `<option value="${n}">${n}%</option>`).join('')}
+              </select>
+              <button type="button" class="mini" data-rich-clear title="Take the styling off the selected words">Plain</button>
+            </div>
+            <textarea id="fLyrics" rows="16" spellcheck="false">${esc(L.sectionsToText(s.sections))}</textarea>
+            <small>Start sections with [Verse 1], [Chorus], [Bridge]… A blank line inside a section starts a new slide. Untagged stanzas become verses.
+            Select words and use the buttons above to colour or slant just those words.</small></label>
         </div>
         <div class="editor-preview"><div class="monitor" id="edMonitor"></div><div class="slides" id="edSlides"></div>
           ${isPack ? '<div class="notice">This song came from a content pack. Your edits are kept when the pack is updated.</div>' : ''}
@@ -116,6 +133,7 @@
     let t;
     d.m.addEventListener('input', () => { clearTimeout(t); t = setTimeout(draw, 150); });
     draw();
+    styleSelectedWords(d.q('#fRich'), d.q('#fLyrics'), draw);
     d.q('#fTitle').focus();
     const save = async (asNew) => {
       const data = read();
@@ -141,6 +159,70 @@
       };
     }
   };
+
+  /**
+   * The styling buttons over the lyrics box.
+   *
+   * They work on whatever is selected, the way a word processor does, and they write their
+   * styling into the lyrics as small tags — so the box still holds the words, the song can
+   * still be searched, printed and exported, and a church that never touches these buttons
+   * never sees a tag.
+   */
+  function styleSelectedWords(bar, box, redraw) {
+    if (!bar || !box) return;
+
+    const apply = (tag, value) => {
+      const { selectionStart: from, selectionEnd: to } = box;
+      if (from === to) return App.toast('Select the words first', true);
+      const out = tag === null
+        ? RGRich.clear(box.value, from, to)
+        : RGRich.wrap(box.value, from, to, tag, value);
+      if (!out) return;
+      box.value = out.text;
+      box.focus();
+      box.setSelectionRange(out.start, out.end);
+      redraw();
+    };
+
+    bar.querySelectorAll('[data-rich]').forEach((b) => (b.onclick = () => apply(b.dataset.rich)));
+    bar.querySelector('[data-rich-clear]').onclick = () => apply(null);
+
+    const colour = bar.querySelector('[data-rich-colour]');
+    // The swatch is for choosing; the styling happens when it is chosen, on the selection that
+    // was there before the colour box stole the focus.
+    let held = null;
+    colour.addEventListener('mousedown', () => { held = [box.selectionStart, box.selectionEnd]; });
+    colour.addEventListener('change', () => {
+      if (held) box.setSelectionRange(held[0], held[1]);
+      apply('c', colour.value);
+    });
+
+    const font = bar.querySelector('[data-rich-font]');
+    font.addEventListener('mousedown', () => { held = [box.selectionStart, box.selectionEnd]; });
+    font.addEventListener('change', () => {
+      if (held) box.setSelectionRange(held[0], held[1]);
+      if (font.value) apply('f', font.value);
+      font.value = '';
+    });
+
+    const size = bar.querySelector('[data-rich-size]');
+    size.addEventListener('mousedown', () => { held = [box.selectionStart, box.selectionEnd]; });
+    size.addEventListener('change', () => {
+      if (held) box.setSelectionRange(held[0], held[1]);
+      if (size.value) apply('s', size.value);
+      size.value = '';
+    });
+
+    // Ctrl+B / Ctrl+I / Ctrl+U inside the lyrics, as anywhere else.
+    box.addEventListener('keydown', (e) => {
+      if (!e.ctrlKey && !e.metaKey) return;
+      const key = e.key.toLowerCase();
+      if (key === 'b' || key === 'i' || key === 'u') {
+        e.preventDefault();
+        apply(key);
+      }
+    });
+  }
 
   // ---------- text / announcement slide ----------
   Dialogs.editCustom = (item) => {
@@ -307,11 +389,11 @@
       const meta = [r.author, r.copyright].filter(Boolean).map(esc).join(' · ');
       let body = '';
       if (item.type === 'song' && opts.words) {
-        body = r.slides.map((sl) => `<div class="v"><b>${esc(sl.code || sl.label || '')}</b><p>${esc(sl.text)}</p></div>`).join('');
+        body = r.slides.map((sl) => `<div class="v"><b>${esc(sl.code || sl.label || '')}</b><p>${esc(RGRich.strip(sl.text))}</p></div>`).join('');
       } else if (item.type === 'scripture' && opts.scripture) {
-        body = `<p class="reading">${r.slides.map((sl) => esc(sl.text)).join(' ')}</p>`;
+        body = `<p class="reading">${r.slides.map((sl) => esc(RGRich.strip(sl.text))).join(' ')}</p>`;
       } else if (item.type === 'custom') {
-        body = `<p class="reading">${esc(item.text || '')}</p>`;
+        body = `<p class="reading">${esc(RGRich.strip(item.text || ''))}</p>`;
       }
       rows.push(`<section>${head}${meta ? `<p class="meta">${meta}</p>` : ''}${body}</section>`);
     }

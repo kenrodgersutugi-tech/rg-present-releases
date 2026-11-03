@@ -332,6 +332,13 @@ button { cursor: pointer; }
 .section-title { font: 600 12px var(--font); letter-spacing: .1em; text-transform: uppercase; color: var(--text-3); margin: 18px 0 8px; }
 .section-title:first-child { margin-top: 0; }
 
+/* The styling buttons over the lyrics box in the song editor. */
+.rich-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 6px; }
+.rich-bar .mini { width: auto; min-width: 30px; padding: 0 8px; height: 26px; font-size: 13px; }
+.rich-bar select { height: 26px; font-size: 12px; padding: 0 6px; }
+.rich-colour { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); }
+.rich-colour input { width: 28px; height: 24px; padding: 0; border: none; background: none; cursor: pointer; }
+
 /* A page on the projector hides the whole service, so this is loud on purpose. */
 .web-live {
   position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
