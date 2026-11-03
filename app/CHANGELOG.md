@@ -5,6 +5,62 @@ App, database schema and content packs are versioned separately:
 - **Schema version**: `MIGRATIONS` in `src/main/db.js` (the library is backed up before every upgrade).
 - **Content pack versions**: each pack's `manifest.json`; see the pack's own `CHANGELOG.md`.
 
+## App 1.7.0 (2026-11-03)
+### Pictures fill the screen
+- A photograph is never the shape of a projector, and RG-Present was putting black bars round
+  every one. **Pictures now fill the screen**, cropping whatever does not fit, the way every
+  other presentation program does. Presentation slides are left alone — cropping one would cut
+  the words off it.
+
+### Ask RG-Present (needs your own Google Gemini key — optional)
+- **Ask** in the toolbar, or **Ctrl+Shift+A**. One box, four questions:
+  - **Find a hymn** for what the service is about — "a hymn about the cross for Good Friday".
+    It searches **your own library**, Kimeru hymns included, and can only ever suggest hymns you
+    actually have.
+  - **Find a reading** from a half-remembered description — "where does it say train up a
+    child". It gives the reference; **the words come out of your own Bible**, so nothing
+    invented can reach the screen.
+  - **Notes into slides** — paste the week's notices and get slides a congregation can read,
+    with names, times and places kept exactly as you wrote them.
+  - **Plan a service** from a theme — headings, hymns from your library and readings, which you
+    can rearrange or remove before anything goes live.
+- **Generated backgrounds**: type the theme of a service and get a background picture and a
+  matching theme. This one needs billing turned on for your Google key — Google's free tier
+  cannot generate images at all. Everything else above works on a free key.
+- Nothing is sent anywhere unless you press a button, your key stays on your computer, and
+  RG-Present works exactly as before without one.
+
+### Working at the desk
+- **Tapping twice always goes live now**, including a single Bible verse. It used to miss,
+  because the first tap redrew the list under the second one.
+- **Name a line of the service** — "First reading", "Offertory" — with the button on it or
+  **F2**. The congregation still sees the hymn's own title.
+- **Headings in the order of service** — Opening, Communion, Sending out — that fold away with
+  everything under them. Any line can be **duplicated**.
+- **Rearrange a song's slides at the desk**: right-click a slide in Preview to split it, join
+  it with the next, move it, leave it out of this service, or put the originals back. None of
+  it changes the hymn in your library.
+- **A reading in two languages** on one slide, matched verse by verse, for a bilingual
+  congregation. The second translation is chosen in the Scripture tab.
+
+### Words and fonts
+- **Colour, bold, italic, underline, font and size on just the words you choose** when editing
+  a song. Select the words and use the buttons over the lyrics box.
+- **A font for every slide** in Settings, used by any theme that does not name its own.
+
+### Fitting your screen
+- The window used to ask for a size **bigger than a 1366×768 laptop screen**, so un-maximising
+  it put the Go Live button past the edge. It now fits the screen it opens on, panel sizes
+  saved on one computer can no longer break the layout on a smaller one, and double-clicking a
+  divider puts it back where it started.
+
+### Presentations and the web
+- **Show a web page on the audience screen** — a hymn video, a funeral stream — with no
+  toolbar, no address bar, no cursor and nothing clickable. A red strip on the operator screen
+  says while it is up, with the button to take it off.
+- **Re-read a presentation from its file**: this week's notices in place of last week's, with
+  one button, keeping its place in any saved service.
+
 ## App 1.6.0 (2026-11-01)
 ### The web, inside RG-Present
 - **Web** in the toolbar (or **Ctrl+Shift+W**) opens a browser in a window of its own. One box:
