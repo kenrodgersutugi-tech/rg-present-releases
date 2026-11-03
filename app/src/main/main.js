@@ -159,7 +159,15 @@ function outputAspect() {
 }
 
 function windowsState() {
-  return { output: !!win.output, stage: !!win.stage, displays: displaysInfo(), outputAspect: outputAspect() };
+  return {
+    output: !!win.output,
+    stage: !!win.stage,
+    displays: displaysInfo(),
+    outputAspect: outputAspect(),
+    // A web page in front of the congregation is covering the service: the operator screen
+    // has to say so, because the operator cannot see the projector from the desk.
+    webOnScreen: browser.audienceState().showing,
+  };
 }
 
 function notifyOperator() {
@@ -379,6 +387,25 @@ function registerIpc() {
     const deck = db.getDeck(id);
     return deck ? presentations.deckSlides(deck.id, deck.slides) : [];
   });
+  /**
+   * Read the deck's file again. The notices change every week and the file keeps its name, so
+   * this is the difference between "add it again and delete the old one" and one button.
+   */
+  handle('decks:refresh', async (id) => {
+    const deck = db.getDeck(id);
+    if (!deck) throw new Error('That presentation is no longer in the library.');
+    if (!deck.source || !fs.existsSync(deck.source)) {
+      throw new Error(`The file is not where it was: ${deck.source || 'unknown'}`);
+    }
+    const fresh = await presentations.importPresentation(deck.source, (done, total) => {
+      tellOperator('decks:progress', { file: path.basename(deck.source), done, total });
+    });
+    // The new slides replace the old ones under the same id, so a saved service that names
+    // this deck shows this week's notices rather than last week's.
+    presentations.replaceDeck(deck.id, fresh.id);
+    db.addDeck({ ...fresh, id: deck.id, name: deck.name });
+    return db.getDeck(deck.id);
+  });
   handle('decks:delete', (id) => {
     const deck = db.deleteDeck(id);
     if (deck) presentations.removeDeck(deck.id);
@@ -395,6 +422,18 @@ function registerIpc() {
   handle('web:forward', () => browser.forward());
   handle('web:reload', () => browser.reload());
   handle('web:state', () => browser.browserState());
+  // The page itself on the projector, for a video or a stream that is not a file.
+  handle('web:show', () => {
+    const r = browser.showOnAudience(win.output);
+    notifyOperator();
+    return r;
+  });
+  handle('web:hide', () => {
+    const r = browser.hideFromAudience();
+    notifyOperator();
+    return r;
+  });
+  handle('web:audience', () => browser.audienceState());
 
   handle('media:delete', (id) => {
     const m = db.deleteMedia(id);

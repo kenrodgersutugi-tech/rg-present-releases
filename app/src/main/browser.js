@@ -11,7 +11,7 @@
 //      `window.rg` and cannot touch the library, the service or the output.
 //   3. Nothing downloads itself onto a church computer. The one thing that can come out of
 //      the browser is a picture the operator deliberately saves into the media library.
-const { BaseWindow, WebContentsView, Menu, app, net, screen, session, shell } = require('electron');
+const { BaseWindow, BrowserWindow, WebContentsView, Menu, app, net, screen, session, shell } = require('electron');
 const fs = require('fs');
 const path = require('path');
 const { paths } = require('./store');
@@ -176,6 +176,86 @@ function guardPage(page, operatorWindow) {
   c.session.on('will-download', (e) => e.preventDefault());
 }
 
+// ---------------------------------------------------------------- on the audience screen
+
+/**
+ * Put the page itself on the projector.
+ *
+ * A church wants this for one thing: a video or a live stream that is not a file — a hymn on
+ * YouTube, a funeral stream, a conference feed. EasyWorship does it by embedding a browser in
+ * the show; we give the page a screen of its own, which means the operator keeps a browser they
+ * can drive while the congregation sees only the page.
+ *
+ * What the congregation must never see is taken care of here: no toolbar, no address bar, no
+ * cursor, no scrollbars, no right-click menu, and no way for a stray click to navigate it
+ * somewhere else — the window is not interactive at all.
+ */
+let showing = null;
+
+function showOnAudience(outputWindow) {
+  const page = state.page;
+  if (!page || page.webContents.isDestroyed()) throw new Error('The browser is not open.');
+  const url = page.webContents.getURL();
+  if (!/^https?:/i.test(url)) throw new Error('There is no page to show yet.');
+
+  const display = outputWindow && !outputWindow.isDestroyed()
+    ? screen.getDisplayMatching(outputWindow.getBounds())
+    : screen.getPrimaryDisplay();
+
+  if (showing && !showing.isDestroyed()) showing.destroy();
+
+  const w = new BrowserWindow({
+    ...display.bounds,
+    frame: false,
+    show: false,
+    skipTaskbar: true,
+    backgroundColor: '#000000',
+    title: 'RG-Present — Audience Output',
+    webPreferences: {
+      // The same sealed session the browser itself uses: no preload, no node, sandboxed.
+      session: session.fromPartition(PARTITION),
+      sandbox: true,
+      contextIsolation: true,
+      nodeIntegration: false,
+      backgroundThrottling: false,
+    },
+  });
+  showing = w;
+
+  w.setMenu(null);
+  w.loadURL(url);
+  w.webContents.on('did-finish-load', () => {
+    // Nothing of a browser, and nothing of a desktop, in front of a congregation.
+    w.webContents.insertCSS(
+      '*{cursor:none!important}html,body{overflow:hidden!important}::-webkit-scrollbar{display:none!important}'
+    );
+  });
+  w.webContents.on('context-menu', (e) => e.preventDefault());
+  w.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  // A click on the wall cannot take the congregation anywhere.
+  w.setIgnoreMouseEvents(true);
+  w.once('ready-to-show', () => {
+    w.setBounds(display.bounds);
+    w.setFullScreen(true);
+    w.setAlwaysOnTop(true, 'screen-saver');
+    w.showInactive();
+  });
+  w.on('closed', () => { if (showing === w) showing = null; });
+  return { showing: true, url };
+}
+
+/** Take the page off the screen; the service is underneath, exactly where it was. */
+function hideFromAudience() {
+  if (showing && !showing.isDestroyed()) showing.destroy();
+  showing = null;
+  return { showing: false, url: '' };
+}
+
+function audienceState() {
+  const live = !!(showing && !showing.isDestroyed());
+  return { showing: live, url: live ? showing.webContents.getURL() : '' };
+}
+
 /** Open the browser, optionally straight onto a search or an address. */
 function openBrowser(input, operatorWindow) {
   const target = input ? resolveQuery(input) : null;
@@ -269,6 +349,9 @@ function reload() {
 /** Tell the browser how to put a saved picture into the library. */
 function onPictureSaved(fn) { onMediaAdded = fn; }
 
-app.once('before-quit', closeBrowser);
+app.once('before-quit', () => { hideFromAudience(); closeBrowser(); });
 
-module.exports = { openBrowser, closeBrowser, navigate, back, forward, reload, browserState, resolveQuery, onPictureSaved, SEARCH_HOME, SEARCH_URL };
+module.exports = {
+  openBrowser, closeBrowser, navigate, back, forward, reload, browserState, resolveQuery,
+  onPictureSaved, showOnAudience, hideFromAudience, audienceState, SEARCH_HOME, SEARCH_URL,
+};

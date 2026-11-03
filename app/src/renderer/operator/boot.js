@@ -20,6 +20,7 @@
     'service-print': () => Dialogs.printService(),
     'import-hymns': () => Dialogs.importHymns(),
     web: () => rg.invoke('web:open'),
+    'web-hide': () => rg.invoke('web:hide'),
     'deck-import': () => Dialogs.importPresentation(),
     themes: () => Dialogs.themes(),
     settings: () => Dialogs.settings(),

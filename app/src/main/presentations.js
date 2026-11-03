@@ -255,8 +255,15 @@ function deckSlides(id, count) {
   return Array.from({ length: count }, (_, index) => slideUrl(id, index));
 }
 
+/** Swap a freshly imported deck's pictures in for an existing deck's, under its own id. */
+function replaceDeck(id, freshId) {
+  const target = deckDir(id);
+  fs.rmSync(target, { force: true, recursive: true });
+  fs.renameSync(deckDir(freshId), target);
+}
+
 function removeDeck(id) {
   fs.rmSync(deckDir(id), { force: true, recursive: true });
 }
 
-module.exports = { importPresentation, deckSlides, deckDir, removeDeck, readPptx };
+module.exports = { importPresentation, deckSlides, deckDir, removeDeck, replaceDeck, readPptx };

@@ -24,6 +24,11 @@
   }
   button:hover:not(:disabled) { background: var(--surface); border-color: var(--line); }
   button:disabled { color: #4a5160; cursor: default; }
+  #show {
+    width: auto; flex: none; padding: 0 10px; border-color: var(--line);
+    background: var(--surface); font-size: 12px;
+  }
+  #show.on { background: #c0392b; border-color: #c0392b; color: #fff; }
   form { flex: 1; min-width: 0; display: flex; }
   input {
     flex: 1; min-width: 0; height: 30px; padding: 0 10px;
@@ -48,6 +53,7 @@
   <form id="go">
     <input id="q" type="text" placeholder="Search the web, or type an address" autocomplete="off" spellcheck="false">
   </form>
+  <button id="show" title="Show this page on the audience screen">Show on screen</button>
   <button id="close" title="Close the browser (Esc)">&#10005;</button>
   <div id="bar"></div>
   <div id="note" hidden></div>

@@ -151,11 +151,23 @@
       card.innerHTML =
         `<img class="thumb" src="${first}" loading="lazy">` +
         `<div class="cap">${App.esc(d.name)} <span class="muted">· ${d.slides} ${d.slides === 1 ? 'slide' : 'slides'}</span></div>` +
+        (d.source ? '<button class="mini refresh" title="Read the file again — this week\u2019s notices in place of last week\u2019s"><i data-icon="import"></i></button>' : '') +
         '<button class="mini del" title="Remove"><i data-icon="trash"></i></button>';
       const asItem = () => ({ type: 'deck', deckId: d.id, title: d.name, slideCount: d.slides });
       card.addEventListener('dblclick', () => App.goLiveNow(asItem()));
       card.addEventListener('click', () => App.setPreview(asItem(), null, 0));
       card.addEventListener('dragstart', (e) => e.dataTransfer.setData('application/x-rg-deck', JSON.stringify(asItem())));
+      const refresh = card.querySelector('.refresh');
+      if (refresh) refresh.onclick = async (e) => {
+        e.stopPropagation();
+        try {
+          const updated = await rg.invoke('decks:refresh', d.id);
+          App.toast(`${updated.name} — ${updated.slides} ${updated.slides === 1 ? 'slide' : 'slides'} from the file`);
+          Library.loadDecks();
+        } catch (err) {
+          App.toast(String(err.message || err).replace(/^Error: /, ''), true);
+        }
+      };
       card.querySelector('.del').onclick = async (e) => {
         e.stopPropagation();
         if (!confirm(`Remove “${d.name}” from the presentations?`)) return;

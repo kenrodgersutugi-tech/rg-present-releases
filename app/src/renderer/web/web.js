@@ -21,6 +21,24 @@
     rg.invoke('web:navigate', value);
   });
 
+  // Putting the page on the projector, and taking it off again. The button says which it
+  // will do, and goes red while a congregation is looking at the page.
+  const showBtn = $('show');
+  let onScreen = false;
+  const setShowing = (state) => {
+    onScreen = !!(state && state.showing);
+    showBtn.classList.toggle('on', onScreen);
+    showBtn.textContent = onScreen ? 'Take it off the screen' : 'Show on screen';
+  };
+  showBtn.addEventListener('click', async () => {
+    try {
+      setShowing(await rg.invoke(onScreen ? 'web:hide' : 'web:show'));
+    } catch (e) {
+      show(String((e && e.message) || e).replace(/^Error: /, ''));
+    }
+  });
+  rg.invoke('web:audience').then(setShowing).catch(() => {});
+
   $('back').addEventListener('click', () => rg.invoke('web:back'));
   $('forward').addEventListener('click', () => rg.invoke('web:forward'));
   $('reload').addEventListener('click', () => rg.invoke('web:reload'));

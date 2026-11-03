@@ -809,6 +809,8 @@
       RGRender.setAspect(st.outputAspect);
       document.documentElement.style.setProperty('--out-aspect', st.outputAspect.toFixed(4));
     }
+    const strip = $('#webLive');
+    if (strip) strip.hidden = !st.webOnScreen;
     $('#btnOutput').classList.toggle('on', !!st.output);
     $('#btnStage').classList.toggle('on', !!st.stage);
     const second = st.displays && st.displays.length > 1;
