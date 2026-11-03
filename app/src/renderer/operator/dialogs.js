@@ -312,6 +312,160 @@
     d.q('#aiTheme').focus();
   };
 
+  /**
+   * Asking for help in words.
+   *
+   * One box and four questions, because an operator planning a service on Saturday night is
+   * asking one of a small number of things. Every answer is shown before anything reaches the
+   * screen, hymns come only from this church's own library, and a reading is looked up in this
+   * church's own Bible — the model supplies the reference, never the verse.
+   */
+  Dialogs.ask = async (prefill) => {
+    const status = await rg.invoke('ai:status');
+    if (!status.ready) {
+      if (confirm('Asking in words needs a Google Gemini key of your own.\n\nOpen Settings to put one in?')) Dialogs.settings();
+      return;
+    }
+
+    const d = modal({
+      title: 'Ask RG-Present',
+      body: `<div class="ask">
+        <input id="askBox" value="${esc(prefill || '')}" autocomplete="off"
+          placeholder="A hymn about the cross · where does it say train up a child · Harvest thanksgiving">
+        <div class="ask-actions">
+          <button class="btn" data-ask="songs">Find a hymn</button>
+          <button class="btn" data-ask="readings">Find a reading</button>
+          <button class="btn" data-ask="plan">Plan a service</button>
+          <button class="btn" data-ask="slides">Notes into slides</button>
+        </div>
+        <div class="ask-note muted" id="askNote">Hymns are chosen from your own library. A reading is looked up in your own Bible.</div>
+        <div class="ask-results" id="askResults"></div>
+      </div>`,
+      footer: '<button class="btn" data-cancel>Close</button>',
+    });
+
+    const box = d.q('#askBox');
+    const note = d.q('#askNote');
+    const results = d.q('#askResults');
+    const busy = (on, what) => {
+      d.qa('[data-ask]').forEach((b) => (b.disabled = on));
+      if (on) note.textContent = `Asking Google about ${what}…`;
+    };
+
+    const row = (title, why, actions) => {
+      const el = document.createElement('div');
+      el.className = 'ask-row';
+      el.innerHTML = `<div class="ask-t"><b>${esc(title)}</b>${why ? `<small>${esc(why)}</small>` : ''}</div><div class="ask-b"></div>`;
+      const bar = el.querySelector('.ask-b');
+      for (const [label, fn] of actions) {
+        const b = document.createElement('button');
+        b.className = 'btn';
+        b.textContent = label;
+        b.onclick = fn;
+        bar.appendChild(b);
+      }
+      results.appendChild(el);
+      return el;
+    };
+
+    const scriptureItem = (reference) => {
+      const ref = RGBible.parseReference(reference);
+      if (!ref) return null;
+      const bible = (window.RGScripture && RGScripture.bible && RGScripture.bible()) || null;
+      return {
+        type: 'scripture',
+        bibleId: (bible && bible.id) || App.settings.defaultBibleId,
+        abbrev: (bible && bible.abbrev) || '',
+        ref,
+        title: RGBible.formatReference(ref),
+      };
+    };
+
+    const ask = async (kind) => {
+      const text = box.value.trim();
+      if (!text) return App.toast('Type what you are looking for first', true);
+      results.innerHTML = '';
+      busy(true, { songs: 'hymns', readings: 'readings', plan: 'the service', slides: 'the notes' }[kind]);
+      try {
+        if (kind === 'songs') {
+          const picks = await rg.invoke('ai:find-songs', { query: text });
+          note.textContent = picks.length ? `${picks.length} from your library:` : 'Nothing in your library seemed to fit. Try other words.';
+          for (const p of picks) {
+            const item = () => ({ type: 'song', songId: p.song.id, title: p.song.title, number: p.song.number, folder: p.song.folder, language: p.song.language });
+            row(`${p.song.number ? p.song.number + '. ' : ''}${p.song.title}`, p.why, [
+              ['Preview', () => App.setPreview(item(), null, 0)],
+              ['Add to service', () => { const it = App.addItem(item()); App.setPreview(it, App.service.items.indexOf(it), 0); App.toast(`Added ${p.song.title}`); }],
+            ]);
+          }
+        } else if (kind === 'readings') {
+          const found = await rg.invoke('ai:find-readings', { query: text });
+          note.textContent = found.length ? 'Looked up in your own Bible:' : 'No passage came back. Try describing it differently.';
+          for (const r of found) {
+            const item = scriptureItem(r.reference);
+            row(r.reference, r.why + (item ? '' : ' — RG-Present could not read that reference'), item ? [
+              ['Preview', () => App.setPreview(item, null, 0)],
+              ['Add to service', () => { const it = App.addItem(item); App.setPreview(it, App.service.items.indexOf(it), 0); App.toast(`Added ${r.reference}`); }],
+            ] : []);
+          }
+        } else if (kind === 'slides') {
+          const slides = await rg.invoke('ai:notes-to-slides', { notes: text });
+          note.textContent = slides.length ? `${slides.length} slides from your notes:` : 'Nothing could be made of those notes.';
+          for (const s of slides) {
+            row(s.label, s.lines.join(' / '), [
+              ['Add to service', () => {
+                const it = App.addItem({ type: 'custom', title: s.label, text: s.lines.join('\n') });
+                App.setPreview(it, App.service.items.indexOf(it), 0);
+                App.toast(`Added ${s.label}`);
+              }],
+            ]);
+          }
+          if (slides.length > 1) {
+            row('All of them', 'as one line of the service each', [['Add every slide', () => {
+              for (const s of slides) App.addItem({ type: 'custom', title: s.label, text: s.lines.join('\n') });
+              App.toast(`Added ${slides.length} slides`);
+              d.close();
+            }]]);
+          }
+        } else if (kind === 'plan') {
+          const plan = await rg.invoke('ai:plan-service', { theme: text });
+          note.textContent = plan.length ? 'A suggested order of service:' : 'No plan came back. Try a different theme.';
+          const toItem = (r) => {
+            if (r.kind === 'heading') return { type: 'group', title: r.title || 'Part of the service' };
+            if (r.kind === 'song') return { type: 'song', songId: r.song.id, title: r.song.title, number: r.song.number, folder: r.song.folder, language: r.song.language };
+            if (r.kind === 'reading') return scriptureItem(r.reference);
+            if (r.kind === 'note') return { type: 'custom', title: r.title || 'Notice', text: r.text || '' };
+            return null;
+          };
+          for (const r of plan) {
+            const label = r.kind === 'heading' ? `— ${r.title} —`
+              : r.kind === 'song' ? `${r.song.number ? r.song.number + '. ' : ''}${r.song.title}`
+              : r.kind === 'reading' ? r.reference
+              : r.title || 'Notice';
+            row(label, r.why || '', []);
+          }
+          if (plan.length) {
+            row('Put it in the service', 'you can rearrange or remove anything afterwards', [['Add the whole plan', () => {
+              let added = 0;
+              for (const r of plan) { const it = toItem(r); if (it) { App.addItem(it); added++; } }
+              App.toast(`Added ${added} lines to the service`);
+              d.close();
+            }]]);
+          }
+        }
+      } catch (e) {
+        note.textContent = App.errorText(e);
+        App.toast(App.errorText(e), true);
+      } finally {
+        busy(false);
+      }
+    };
+
+    d.qa('[data-ask]').forEach((b) => (b.onclick = () => ask(b.dataset.ask)));
+    box.addEventListener('keydown', (e) => { if (e.key === 'Enter') ask('songs'); });
+    d.q('[data-cancel]').onclick = () => d.close();
+    box.focus();
+  };
+
   // ---------- text / announcement slide ----------
   Dialogs.editCustom = (item) => {
     const it = item || { type: 'custom', title: 'Announcement', text: '', themeId: '' };

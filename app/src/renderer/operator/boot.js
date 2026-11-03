@@ -19,6 +19,7 @@
     'service-save': () => App.saveService(),
     'service-print': () => Dialogs.printService(),
     'import-hymns': () => Dialogs.importHymns(),
+    ask: () => Dialogs.ask(),
     web: () => rg.invoke('web:open'),
     'web-hide': () => rg.invoke('web:hide'),
     'ai-background': () => Dialogs.generateBackground(App.service && App.service.name !== 'Untitled service' ? App.service.name : ''),

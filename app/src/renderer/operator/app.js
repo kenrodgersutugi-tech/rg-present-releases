@@ -981,6 +981,7 @@
       }
       // The web browser, on its own window and never on the projector.
       if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'w') { e.preventDefault(); return rg.invoke('web:open'); }
+      if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'a') { e.preventDefault(); return Dialogs.ask(); }
       // Text size works even while typing in the library search, so it is always to hand.
       if (e.ctrlKey && (e.key === '+' || e.key === '=')) { e.preventDefault(); return App.nudgeTextScale(1); }
       if (e.ctrlKey && (e.key === '-' || e.key === '_')) { e.preventDefault(); return App.nudgeTextScale(-1); }

@@ -98,7 +98,8 @@ function errorFrom(status, body) {
     }
     return 'Google is rate-limiting that key. Wait a minute and try again.';
   }
-  if (status >= 500) return 'Google had a problem generating the picture. Try again in a moment.';
+  if (status === 503) return 'Google is busy at the moment. Try again in a few seconds.';
+  if (status >= 500) return 'Google had a problem with that request. Try again in a moment.';
   return message ? `Google refused: ${message}` : `Google returned ${status}.`;
 }
 
@@ -189,25 +190,43 @@ function textEndpoint() {
   return `https://generativelanguage.googleapis.com/v1beta/models/${TEXT_MODEL}:generateContent`;
 }
 
-/** Ask for JSON and get JSON back, whatever decoration the model puts round it. */
+/**
+ * Ask for JSON and get JSON back, whatever decoration the model puts round it.
+ *
+ * Two things learned the hard way against the real service:
+ *
+ *   - gemini-2.5-flash spends part of the answer on hidden "thinking", and those tokens come
+ *     out of the same budget as the reply. With thinking left on, a long answer is cut off
+ *     mid-object and what arrives is not JSON at all. It is turned off here: these are
+ *     lookups, not puzzles.
+ *   - the model is genuinely busy sometimes and answers 503. That is worth one quiet retry
+ *     rather than a failure in front of somebody planning a service.
+ */
 async function askJson({ apiKey, prompt, maxTokens }) {
   const key = String(apiKey || '').trim();
   if (!key) throw new Error('Put your Gemini key into Settings first.');
 
+  const send = async () => net.fetch(textEndpoint(), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0.4,
+        maxOutputTokens: maxTokens || 2048,
+        responseMimeType: 'application/json',
+        thinkingConfig: { thinkingBudget: 0 },
+      },
+    }),
+  });
+
   let response;
   try {
-    response = await net.fetch(textEndpoint(), {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.4,
-          maxOutputTokens: maxTokens || 2048,
-          responseMimeType: 'application/json',
-        },
-      }),
-    });
+    response = await send();
+    if (response.status === 503) {
+      await new Promise((r) => setTimeout(r, 1500));
+      response = await send();
+    }
   } catch (e) {
     throw new Error('Could not reach Google. Check the internet connection.');
   }
@@ -216,9 +235,14 @@ async function askJson({ apiKey, prompt, maxTokens }) {
   try { body = await response.json(); } catch (_) { body = null; }
   if (!response.ok) throw new Error(errorFrom(response.status, body));
 
-  const parts = ((((body || {}).candidates || [])[0] || {}).content || {}).parts || [];
+  const candidate = (((body || {}).candidates || [])[0]) || {};
+  const parts = (candidate.content || {}).parts || [];
   const text = parts.map((p) => p.text || '').join('').trim();
-  if (!text) throw new Error('Google replied with nothing. Try asking differently.');
+  if (!text) {
+    if (candidate.finishReason === 'MAX_TOKENS') throw new Error('The answer was too long for one reply. Ask for less at a time.');
+    if (candidate.finishReason === 'SAFETY') throw new Error('Google declined to answer that one. Try wording it differently.');
+    throw new Error('Google replied with nothing. Try asking differently.');
+  }
 
   const cleaned = text.replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
   try {
@@ -228,6 +252,9 @@ async function askJson({ apiKey, prompt, maxTokens }) {
     const match = cleaned.match(/[[{][\s\S]*[\]}]/);
     if (match) {
       try { return JSON.parse(match[0]); } catch (__) { /* falls through */ }
+    }
+    if (candidate.finishReason === 'MAX_TOKENS') {
+      throw new Error('The answer was cut short. Ask for fewer suggestions at a time.');
     }
     throw new Error('Google replied in a shape RG-Present could not read. Try again.');
   }
@@ -246,7 +273,7 @@ async function findSongs({ apiKey, query, candidates }) {
 
   const answer = await askJson({
     apiKey,
-    maxTokens: 1024,
+    maxTokens: 2048,
     prompt: [
       'You are helping a church operator find hymns in their own library.',
       `They asked for: "${query}"`,
@@ -275,7 +302,7 @@ async function findSongs({ apiKey, query, candidates }) {
 async function findReadings({ apiKey, query }) {
   const answer = await askJson({
     apiKey,
-    maxTokens: 700,
+    maxTokens: 1200,
     prompt: [
       'A church operator is looking for a Bible passage.',
       `They described it as: "${query}"`,
@@ -301,7 +328,7 @@ async function planService({ apiKey, theme, candidates }) {
 
   const answer = await askJson({
     apiKey,
-    maxTokens: 1400,
+    maxTokens: 3000,
     prompt: [
       `A church is planning a service on the theme "${theme}".`,
       '',
@@ -330,7 +357,7 @@ async function planService({ apiKey, theme, candidates }) {
 async function notesToSlides({ apiKey, notes }) {
   const answer = await askJson({
     apiKey,
-    maxTokens: 1600,
+    maxTokens: 3000,
     prompt: [
       'Turn these notes into slides for a church projector.',
       '',
