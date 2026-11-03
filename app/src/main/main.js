@@ -405,6 +405,49 @@ function registerIpc() {
     return { media: picture, themeId: id, title: String(theme).trim() };
   });
 
+  /**
+   * The asking-in-words side. Each of these gathers what the church actually has, sends it to
+   * Google with the question, and hands back something the operator can look at before any of
+   * it goes near the screen.
+   */
+  const songShortlist = (query) => {
+    // A local search first, so the model is given the likely ones rather than the whole
+    // library: faster, cheaper, and it keeps a church's own words doing the first filtering.
+    const words = String(query || '').split(/\s+/).filter((w) => w.length > 2).slice(0, 6);
+    const found = new Map();
+    for (const word of words) {
+      for (const s of db.searchSongs({ q: word, limit: 200 })) found.set(s.id, s);
+    }
+    if (found.size < 60) {
+      for (const s of db.searchSongs({ q: '', limit: 900 })) if (!found.has(s.id)) found.set(s.id, s);
+    }
+    return [...found.values()].map((s) => ({ id: s.id, number: s.number, title: s.title, alt_title: s.alt_title, folder: s.folder }));
+  };
+
+  handle('ai:find-songs', async ({ query }) => {
+    const s = store.loadSettings();
+    const picks = await ai.findSongs({ apiKey: s.geminiApiKey, query, candidates: songShortlist(query) });
+    // Hand back the songs themselves, so the operator sees real titles, not ids.
+    return picks.map((p) => ({ ...p, song: db.getSong(p.id) })).filter((p) => p.song);
+  });
+
+  handle('ai:find-readings', async ({ query }) => {
+    const s = store.loadSettings();
+    return ai.findReadings({ apiKey: s.geminiApiKey, query });
+  });
+
+  handle('ai:plan-service', async ({ theme }) => {
+    const s = store.loadSettings();
+    const plan = await ai.planService({ apiKey: s.geminiApiKey, theme, candidates: songShortlist(theme) });
+    return plan.map((row) => (row.kind === 'song' ? { ...row, song: db.getSong(row.id) } : row))
+      .filter((row) => row.kind !== 'song' || row.song);
+  });
+
+  handle('ai:notes-to-slides', async ({ notes }) => {
+    const s = store.loadSettings();
+    return ai.notesToSlides({ apiKey: s.geminiApiKey, notes });
+  });
+
   // ---------------- presentations ----------------
   handle('decks:list', () => db.listDecks());
   handle('decks:import', async () => {

@@ -166,4 +166,195 @@ async function generateBackground({ apiKey, theme, style, aspect }) {
   };
 }
 
-module.exports = { generateBackground, buildPrompt, firstImage, errorFrom, MODEL, ENDPOINT };
+// ---------------------------------------------------------------- asking in words
+
+/**
+ * The text side of the same key.
+ *
+ * Images need a paid Google account; text does not, so these work for any church with a free
+ * key — and they are the more useful half anyway. Three rules hold throughout:
+ *
+ *   1. **Scripture is never written by a machine.** The model is asked for a reference; the
+ *      words come out of the church's own Bible. Nothing invented ever reaches the wall.
+ *   2. **Songs are only ever chosen from the church's own library.** The model is given the
+ *      titles it may choose between and must answer with their ids; anything else is dropped.
+ *   3. **Nothing happens by itself.** Every one of these is a button an operator presses, and
+ *      what comes back is a suggestion they can see before anything reaches the screen.
+ */
+const TEXT_MODEL = 'gemini-2.5-flash';
+
+function textEndpoint() {
+  const { app } = require('electron');
+  if (!app.isPackaged && process.env.RG_AI_TEXT_ENDPOINT) return process.env.RG_AI_TEXT_ENDPOINT;
+  return `https://generativelanguage.googleapis.com/v1beta/models/${TEXT_MODEL}:generateContent`;
+}
+
+/** Ask for JSON and get JSON back, whatever decoration the model puts round it. */
+async function askJson({ apiKey, prompt, maxTokens }) {
+  const key = String(apiKey || '').trim();
+  if (!key) throw new Error('Put your Gemini key into Settings first.');
+
+  let response;
+  try {
+    response = await net.fetch(textEndpoint(), {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': key },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.4,
+          maxOutputTokens: maxTokens || 2048,
+          responseMimeType: 'application/json',
+        },
+      }),
+    });
+  } catch (e) {
+    throw new Error('Could not reach Google. Check the internet connection.');
+  }
+
+  let body = null;
+  try { body = await response.json(); } catch (_) { body = null; }
+  if (!response.ok) throw new Error(errorFrom(response.status, body));
+
+  const parts = ((((body || {}).candidates || [])[0] || {}).content || {}).parts || [];
+  const text = parts.map((p) => p.text || '').join('').trim();
+  if (!text) throw new Error('Google replied with nothing. Try asking differently.');
+
+  const cleaned = text.replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();
+  try {
+    return JSON.parse(cleaned);
+  } catch (_) {
+    // One rescue attempt: the first well-formed object or array inside the reply.
+    const match = cleaned.match(/[[{][\s\S]*[\]}]/);
+    if (match) {
+      try { return JSON.parse(match[0]); } catch (__) { /* falls through */ }
+    }
+    throw new Error('Google replied in a shape RG-Present could not read. Try again.');
+  }
+}
+
+/**
+ * Find songs in the church's own library.
+ *
+ * The model is given a shortlist and must answer with ids from it, so it cannot suggest a hymn
+ * the church does not have. Anything it invents is dropped on the way back.
+ */
+async function findSongs({ apiKey, query, candidates }) {
+  const list = candidates.slice(0, 1200)
+    .map((s) => `${s.id}|${[s.number, s.title, s.alt_title, s.folder].filter(Boolean).join(' · ')}`)
+    .join('\n');
+
+  const answer = await askJson({
+    apiKey,
+    maxTokens: 1024,
+    prompt: [
+      'You are helping a church operator find hymns in their own library.',
+      `They asked for: "${query}"`,
+      '',
+      'These are the only songs they have. Each line is "id|number · title · also-known-as · folder":',
+      list,
+      '',
+      'Choose up to 6 that best fit what they asked for. Prefer the ones whose words really suit',
+      'the occasion or theme, not merely a title that shares a word.',
+      'Answer as JSON: {"songs":[{"id":<number>,"why":"<at most 12 words>"}]}',
+      'Use only ids from the list. If nothing fits, answer {"songs":[]}.',
+    ].join('\n'),
+  });
+
+  const allowed = new Set(candidates.map((s) => String(s.id)));
+  return (answer.songs || [])
+    .filter((s) => allowed.has(String(s.id)))
+    .slice(0, 6)
+    .map((s) => ({ id: Number(s.id), why: String(s.why || '').slice(0, 80) }));
+}
+
+/**
+ * Find a reading from a description. The model returns references only — "Proverbs 22:6" — and
+ * the words are then read out of the church's own Bible, so nothing it imagines is shown.
+ */
+async function findReadings({ apiKey, query }) {
+  const answer = await askJson({
+    apiKey,
+    maxTokens: 700,
+    prompt: [
+      'A church operator is looking for a Bible passage.',
+      `They described it as: "${query}"`,
+      '',
+      'Give up to 5 passages that match, most likely first.',
+      'Answer as JSON: {"readings":[{"reference":"Book Chapter:Verse-Verse","why":"<at most 12 words>"}]}',
+      'Use ordinary English book names as they appear in the King James Version.',
+      'Keep each passage short enough to read aloud in a service — a few verses, not a whole chapter.',
+    ].join('\n'),
+  });
+
+  return (answer.readings || [])
+    .slice(0, 5)
+    .map((r) => ({ reference: String(r.reference || '').slice(0, 60), why: String(r.why || '').slice(0, 80) }))
+    .filter((r) => r.reference);
+}
+
+/** An order of service built round a theme, out of the hymns the church actually has. */
+async function planService({ apiKey, theme, candidates }) {
+  const list = candidates.slice(0, 900)
+    .map((s) => `${s.id}|${[s.number, s.title, s.folder].filter(Boolean).join(' · ')}`)
+    .join('\n');
+
+  const answer = await askJson({
+    apiKey,
+    maxTokens: 1400,
+    prompt: [
+      `A church is planning a service on the theme "${theme}".`,
+      '',
+      'These are the hymns they have ("id|number · title · folder"):',
+      list,
+      '',
+      'Build an order of service with a heading before each part. Use between 6 and 10 lines in all.',
+      'Hymns must be chosen from the list by id. Readings are Bible references only.',
+      'Answer as JSON:',
+      '{"plan":[{"kind":"heading","title":"Opening"},',
+      ' {"kind":"song","id":<number>,"why":"<a few words>"},',
+      ' {"kind":"reading","reference":"John 3:16-18","why":"<a few words>"},',
+      ' {"kind":"note","title":"Notices","text":"<one line>"}]}',
+      'Order it as a service runs: gathering, readings, sermon, response, sending out.',
+    ].join('\n'),
+  });
+
+  const allowed = new Set(candidates.map((s) => String(s.id)));
+  return (answer.plan || [])
+    .slice(0, 14)
+    .filter((row) => row && row.kind)
+    .filter((row) => row.kind !== 'song' || allowed.has(String(row.id)));
+}
+
+/** Notes, notices or an outline turned into slides a congregation can read. */
+async function notesToSlides({ apiKey, notes }) {
+  const answer = await askJson({
+    apiKey,
+    maxTokens: 1600,
+    prompt: [
+      'Turn these notes into slides for a church projector.',
+      '',
+      notes.slice(0, 6000),
+      '',
+      'Rules a projected slide must follow:',
+      '- at most 5 short lines on a slide, and at most about 8 words on a line;',
+      '- plain words a whole congregation can read from the back of the hall;',
+      '- keep names, dates, times and places exactly as written;',
+      '- do not invent anything that is not in the notes.',
+      'Answer as JSON: {"slides":[{"label":"<short name>","lines":["line","line"]}]}',
+    ].join('\n'),
+  });
+
+  return (answer.slides || [])
+    .slice(0, 20)
+    .map((s) => ({
+      label: String(s.label || 'Slide').slice(0, 40),
+      lines: (Array.isArray(s.lines) ? s.lines : []).slice(0, 8).map((l) => String(l).slice(0, 120)),
+    }))
+    .filter((s) => s.lines.length);
+}
+
+module.exports = {
+  generateBackground, buildPrompt, firstImage, errorFrom, MODEL, ENDPOINT,
+  askJson, findSongs, findReadings, planService, notesToSlides, TEXT_MODEL,
+};
