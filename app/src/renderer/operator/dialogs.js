@@ -253,7 +253,8 @@
         </div>
         <div class="editor-preview"><div class="monitor" id="aiMonitor"></div></div>
       </div>`,
-      footer: `<div class="left"><button class="btn" data-again hidden>Generate another</button></div>
+      footer: `<div class="left"><button class="btn" data-again hidden>Generate another</button>
+          <button class="btn" data-title hidden>Add a title slide</button></div>
         <button class="btn" data-cancel>Close</button><button class="btn primary" data-go>Generate</button>`,
     });
 
@@ -273,6 +274,7 @@
         mon.show({ mode: 'slide', text: theme, theme: t, item: { kind: 'song', title: theme }, fontFallback: App.settings.fontFallback, transition: { type: 'cut' } });
         d.q('#aiNote').textContent = `Saved as “${made.media.name}” in Media, and the theme “${theme}” is ready to use.`;
         d.q('[data-again]').hidden = false;
+        d.q('[data-title]').hidden = false;
         d.q('[data-go]').textContent = 'Use it for this service';
       } catch (e) {
         d.q('#aiNote').textContent = App.errorText(e);
@@ -292,7 +294,20 @@
       await App.refreshPreview();
       if (window.Library && Library.loadMedia) Library.loadMedia();
     };
-    d.q('[data-again]').onclick = () => { made = null; d.q('[data-go]').textContent = 'Generate'; run(); };
+    d.q('[data-again]').onclick = () => { made = null; d.q('[data-go]').textContent = 'Generate'; d.q('[data-title]').hidden = true; run(); };
+
+    /*
+     * A finished slide, not only a look. The theme of the service usually opens it — the words
+     * on the picture as people come in — so this puts exactly that at the top of the order of
+     * service, using the theme just generated.
+     */
+    d.q('[data-title]').onclick = () => {
+      if (!made) return;
+      const item = App.addItem({ type: 'custom', title: made.title, text: made.title, themeId: made.themeId }, 0);
+      App.setPreview(item, 0, 0);
+      d.close();
+      App.toast(`“${made.title}” added at the top of the service`);
+    };
     d.q('[data-cancel]').onclick = () => d.close();
     d.q('#aiTheme').focus();
   };

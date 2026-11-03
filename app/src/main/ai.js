@@ -13,7 +13,19 @@ const fs = require('fs');
 const path = require('path');
 const { paths } = require('./store');
 
-const ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/interactions';
+const DEFAULT_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/interactions';
+
+/**
+ * Where to ask. Google's own service, unless a development run points this at a stand-in —
+ * a packaged build ignores the variable, so no church installation can be redirected.
+ */
+function endpoint() {
+  const { app } = require('electron');
+  if (!app.isPackaged && process.env.RG_AI_ENDPOINT) return process.env.RG_AI_ENDPOINT;
+  return DEFAULT_ENDPOINT;
+}
+
+const ENDPOINT = DEFAULT_ENDPOINT;
 const MODEL = 'gemini-nano-banana-2.1';
 const API_REVISION = '2026-05-20';
 
@@ -76,7 +88,16 @@ function errorFrom(status, body) {
       : 'That Gemini key was not accepted. Check it in Settings — copy it again from aistudio.google.com.';
   }
   if (status === 401 || status === 403) return 'That Gemini key is not allowed to generate images. Check the key and that billing is enabled on it.';
-  if (status === 429) return 'Google is rate-limiting that key. Wait a minute and try again.';
+  if (status === 429) {
+    // The usual case is not a burst of requests: it is a key on Google's free tier, which
+    // allows no image generation at all. Say so, because waiting will never fix it.
+    if (/free tier|limit: ?0|upgrade your tier/i.test(message)) {
+      return 'That Google account is on the free tier, which cannot generate images at all. '
+        + 'Turn on billing for the key at ai.dev/rate-limit, or carry on using your own pictures — '
+        + 'everything else in RG-Present works without it.';
+    }
+    return 'Google is rate-limiting that key. Wait a minute and try again.';
+  }
   if (status >= 500) return 'Google had a problem generating the picture. Try again in a moment.';
   return message ? `Google refused: ${message}` : `Google returned ${status}.`;
 }
@@ -94,7 +115,7 @@ async function generateBackground({ apiKey, theme, style, aspect }) {
 
   let response;
   try {
-    response = await net.fetch(ENDPOINT, {
+    response = await net.fetch(endpoint(), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
