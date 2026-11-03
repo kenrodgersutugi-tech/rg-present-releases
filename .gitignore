@@ -1,4 +1,6 @@
 
 # Probe scripts used to drive the app during development; never part of a build.
 app/*.cjs
-build/appx/
+
+# app/build/appx is NOT ignored: the Store tiles are brand assets drawn from icon.svg,
+# and keeping them means a Store build can never quietly ship somebody else's logo.
