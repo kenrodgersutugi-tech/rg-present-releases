@@ -81,6 +81,36 @@
       const verses = await rg.invoke('bible:passage', { id: item.bibleId, ref: item.ref });
       const title = `${B.formatReference(item.ref)}${item.abbrev ? ` (${item.abbrev})` : ''}`;
       if (!verses.length) return { kind: 'scripture', title: `${title}: not in this Bible`, slides: [], theme: App.themeFor(item.themeId) };
+
+      /*
+       * A second translation, read alongside the first. A congregation that worships in two
+       * languages hears the reading twice; this puts both on one slide so nobody is looking at
+       * words they cannot read while the other half is being read.
+       *
+       * The two are matched verse by verse, so verse 16 sits over verse 16 even where the
+       * translations break their sentences differently.
+       */
+      if (item.alongside) {
+        const second = await rg.invoke('bible:passage', { id: item.alongside, ref: item.ref });
+        if (second.length) {
+          const byVerse = new Map(second.map((v) => [`${v.chapter}:${v.verse}`, v.text]));
+          const paired = verses.map((v) => ({
+            ...v,
+            text: [v.text, byVerse.get(`${v.chapter}:${v.verse}`) || ''].filter(Boolean).join('\n\n'),
+          }));
+          const slides = B.buildScriptureSlides(paired, item.ref, {
+            // One verse at a time: two languages of the same verse already fill a slide.
+            versesPerSlide: 1,
+            maxChars: Math.round((App.settings.scriptureMaxChars || 320) * 1.6),
+            verseNumbers: App.settings.scriptureVerseNumbers,
+          });
+          return {
+            kind: 'scripture', title: `${title} + ${item.alongsideAbbrev || ''}`.trim(),
+            abbrev: `${item.abbrev || ''} · ${item.alongsideAbbrev || ''}`.trim(),
+            slides, theme: App.themeFor(item.themeId || App.settings.scriptureThemeId),
+          };
+        }
+      }
       const slides = B.buildScriptureSlides(verses, item.ref, {
         versesPerSlide: App.settings.scriptureVersesPerSlide,
         maxChars: App.settings.scriptureMaxChars,
@@ -124,6 +154,18 @@
 
   App.resolve = async (item) => {
     const r = await resolveItem(item);
+    /*
+     * Slides rearranged for this service only.
+     *
+     * A verse too long for the screen, two short verses that belong together, a slide to leave
+     * out this morning — all of it is decided at the desk, often minutes before the service,
+     * and none of it should rewrite the hymn in the library that every other church service
+     * uses. So the arrangement is kept on this line of the service, and "Reset" puts the
+     * hymn's own slides back.
+     */
+    if (Array.isArray(item.slidesOverride) && item.slidesOverride.length) {
+      r.slides = item.slidesOverride.map((s) => ({ ...s }));
+    }
     // A picture or video chosen for this item wins over the theme's own background; the words,
     // the song or passage footer and the theme's overlay stay exactly as they are.
     r.theme = App.themeWithBackground(r.theme, item);
@@ -168,6 +210,13 @@
       card.innerHTML = `<div class="thumb"></div><span class="num">${i + 1}</span><div class="cap"><span class="k ${s.type === 'chorus' ? 'type-chorus' : ''}">${App.esc(s.code || '')}</span><span>${App.esc(s.label)}</span></div>`;
       card.addEventListener('click', () => onPick(i));
       if (onDbl) card.addEventListener('dblclick', () => onDbl(i));
+      if (container === $('#previewSlides')) {
+        card.addEventListener('contextmenu', (e) => {
+          e.preventDefault();
+          onPick(i);
+          slideMenu(card, i);
+        });
+      }
       container.appendChild(card);
       return card;
     });
@@ -183,6 +232,81 @@
     };
     requestAnimationFrame(step);
     return cards;
+  }
+
+  /**
+   * Rearranging the slides of the line in Preview. Every one of these works on a copy, writes
+   * it to the item, and redraws — so nothing is changed until the operator asks, and the
+   * library is never touched.
+   */
+  App.slideEdit = async (action, index) => {
+    const p = App.preview;
+    if (!p || !p.r || !p.r.slides.length) return;
+    const item = p.item;
+    const slides = (item.slidesOverride && item.slidesOverride.length
+      ? item.slidesOverride
+      : p.r.slides).map((s) => ({ label: s.label, code: s.code, type: s.type, text: s.text }));
+
+    if (action === 'reset') {
+      delete item.slidesOverride;
+    } else if (action === 'hide') {
+      if (slides.length < 2) return App.toast('That is the only slide', true);
+      slides.splice(index, 1);
+      item.slidesOverride = slides;
+    } else if (action === 'merge') {
+      if (index >= slides.length - 1) return App.toast('Nothing after it to join', true);
+      slides[index] = { ...slides[index], text: `${slides[index].text}\n${slides[index + 1].text}`.trim() };
+      slides.splice(index + 1, 1);
+      item.slidesOverride = slides;
+    } else if (action === 'split') {
+      const lines = String(slides[index].text || '').split('\n').filter((l) => l.trim() !== '');
+      if (lines.length < 2) return App.toast('Only one line: nothing to split', true);
+      const half = Math.ceil(lines.length / 2);
+      const first = { ...slides[index], text: lines.slice(0, half).join('\n') };
+      const second = { ...slides[index], text: lines.slice(half).join('\n') };
+      slides.splice(index, 1, first, second);
+      item.slidesOverride = slides;
+    } else if (action === 'earlier' || action === 'later') {
+      const to = action === 'earlier' ? index - 1 : index + 1;
+      if (to < 0 || to >= slides.length) return;
+      const [moved] = slides.splice(index, 1);
+      slides.splice(to, 0, moved);
+      item.slidesOverride = slides;
+    }
+
+    if (App.service.items.includes(item)) App.markDirty();
+    const keep = Math.min(index, Math.max(0, (item.slidesOverride || p.r.slides).length - 1));
+    await App.setPreview(item, p.index, action === 'earlier' ? Math.max(0, index - 1) : keep);
+  };
+
+  /** The little menu on a slide in Preview. */
+  function slideMenu(card, index) {
+    document.querySelectorAll('.slide-menu').forEach((m) => m.remove());
+    const menu = document.createElement('div');
+    menu.className = 'slide-menu';
+    const overridden = !!(App.preview && App.preview.item && App.preview.item.slidesOverride);
+    menu.innerHTML = [
+      ['split', 'Split this slide in two'],
+      ['merge', 'Join with the next slide'],
+      ['earlier', 'Move it earlier'],
+      ['later', 'Move it later'],
+      ['hide', 'Leave it out of this service'],
+      ...(overridden ? [['reset', 'Put the original slides back']] : []),
+    ].map(([a, label]) => `<button data-a="${a}">${label}</button>`).join('');
+    document.body.appendChild(menu);
+    const r = card.getBoundingClientRect();
+    menu.style.left = `${Math.min(r.left, window.innerWidth - menu.offsetWidth - 10)}px`;
+    menu.style.top = `${Math.max(8, r.top - menu.offsetHeight - 6)}px`;
+    menu.querySelectorAll('button').forEach((b) => (b.onclick = () => {
+      menu.remove();
+      App.slideEdit(b.dataset.a, index);
+    }));
+    const away = (e) => {
+      if (menu.contains(e.target)) return;
+      menu.remove();
+      document.removeEventListener('mousedown', away);
+    };
+    setTimeout(() => document.addEventListener('mousedown', away), 0);
   }
 
   function markSel(container, i) {
@@ -622,10 +746,14 @@
   App.renameItem = async (i) => {
     const it = App.service.items[i];
     if (!it) return;
-    const name = await App.prompt('Name this line', 'Shown in the order of service', it.label || it.title || '');
+    const heading = it.type === 'group';
+    const name = await App.prompt(heading ? 'Rename this heading' : 'Name this line',
+      heading ? 'Heading' : 'Shown in the order of service', (heading ? it.title : it.label || it.title) || '');
     if (name === null) return;
     const clean = String(name).trim();
-    if (!clean || clean === it.title) delete it.label;
+    if (heading) {
+      if (clean) it.title = clean;
+    } else if (!clean || clean === it.title) delete it.label;
     else it.label = clean;
     App.markDirty();
     App.renderSchedule();
@@ -648,8 +776,40 @@
   };
 
   function itemIcon(it) {
-    return { song: 'music', custom: 'text', scripture: 'book', countdown: 'clock', media: it.mediaType === 'video' ? 'video' : 'image' }[it.type] || 'file';
+    return { song: 'music', custom: 'text', scripture: 'book', countdown: 'clock', group: 'folder', deck: 'file', media: it.mediaType === 'video' ? 'video' : 'image' }[it.type] || 'file';
   }
+
+  /**
+   * A heading in the order of service — "Opening", "Communion", "Sending out".
+   *
+   * It is an item like any other, so it drags, saves and loads with the service; it simply
+   * never goes to the screen. The lines under it fold away with it, which is what makes a
+   * twenty-line service readable on a laptop at the back of a church.
+   */
+  App.addGroup = async () => {
+    const name = await App.prompt('Add a heading', 'Heading', 'Opening');
+    if (!name) return;
+    const item = App.addItem({ type: 'group', title: String(name).trim() || 'Heading' });
+    App.renderSchedule();
+    return item;
+  };
+
+  /** Is this line hidden because the heading above it is folded? */
+  function hiddenByFold(index) {
+    for (let i = index - 1; i >= 0; i--) {
+      const it = App.service.items[i];
+      if (it.type === 'group') return !!it.folded;
+    }
+    return false;
+  }
+
+  App.duplicateItem = (i) => {
+    const it = App.service.items[i];
+    if (!it) return;
+    const copy = JSON.parse(JSON.stringify(it));
+    delete copy.id;
+    App.addItem(copy, i + 1);
+  };
 
   App.renderSchedule = () => {
     const ol = $('#schedule');
@@ -668,19 +828,47 @@
         : it.type === 'custom' ? 'Text slide' : 'Media';
       // A church's order of service says "First reading", not "John 3:16-18". The operator's
       // own name for the line wins; what it actually is drops to the line underneath.
+      if (it.type === 'group') {
+        // A heading: it names a part of the service and folds what is under it.
+        const count = (() => { let n = 0; for (let j = i + 1; j < App.service.items.length; j++) { if (App.service.items[j].type === 'group') break; n++; } return n; })();
+        li.className += ' group' + (it.folded ? ' folded' : '');
+        li.innerHTML = `<i class="grip" data-icon="grip"></i><span class="fold">${it.folded ? '▸' : '▾'}</span>
+          <span class="t"><b>${App.esc(it.title)}</b><small>${count} ${count === 1 ? 'item' : 'items'}</small></span>
+          <button class="mini ren" title="Rename this heading (F2)"><i data-icon="edit"></i></button>
+          <button class="mini rm" title="Remove the heading (what is under it stays)"><i data-icon="x"></i></button>`;
+        li.addEventListener('click', (e) => {
+          if (e.target.closest('.rm')) return App.removeItem(i);
+          if (e.target.closest('.ren')) return App.renameItem(i);
+          it.folded = !it.folded;
+          App.markDirty();
+          App.renderSchedule();
+        });
+        li.addEventListener('dragstart', (e) => {
+          e.dataTransfer.setData('application/x-rg-item', String(i));
+          e.dataTransfer.effectAllowed = 'move';
+        });
+        ol.appendChild(li);
+        return;
+      }
+
+      // Lines under a folded heading are put away, not lost.
+      if (hiddenByFold(i)) return;
+
       const shown = it.label || it.title;
       const under = it.label ? [it.title, sub].filter(Boolean).join(' · ') : sub;
       li.innerHTML = `<i class="grip" data-icon="grip"></i><span class="kind ${it.type}"><i data-icon="${itemIcon(it)}"></i></span>
         <span class="t"><b>${App.esc(shown)}</b><small>${App.esc(under)}</small></span>
+        <button class="mini dup" title="Duplicate this line"><i data-icon="copy"></i></button>
         <button class="mini ren" title="Name this line of the service (F2)"><i data-icon="edit"></i></button>
         <button class="mini rm" title="Remove"><i data-icon="x"></i></button>`;
       li.addEventListener('click', (e) => {
         if (e.target.closest('.rm')) return App.removeItem(i);
+        if (e.target.closest('.dup')) return App.duplicateItem(i);
         if (e.target.closest('.ren')) return App.renameItem(i);
         App.setPreview(it, i, 0);
       });
       li.addEventListener('dblclick', (e) => {
-        if (e.target.closest('.rm')) return;
+        if (e.target.closest('.rm') || e.target.closest('.dup')) return;
         App.goLive(it, i, 0);
       });
       li.addEventListener('dragstart', (e) => {

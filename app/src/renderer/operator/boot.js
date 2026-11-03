@@ -35,6 +35,7 @@
     'add-custom': () => Dialogs.editCustom(),
     'add-media': () => Dialogs.addMedia(),
     'add-countdown': () => Dialogs.editCountdown(),
+    'add-group': () => App.addGroup(),
     'edit-preview': () => Dialogs.editPreview(),
     'item-background': () => Dialogs.itemBackground(),
     'go-live': () => App.goLive(),

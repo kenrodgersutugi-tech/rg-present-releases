@@ -27,6 +27,17 @@
     const sel = $('#bibleSelect');
     sel.innerHTML = S.bibles.map((b) => `<option value="${esc(b.id)}" ${b.id === S.bibleId ? 'selected' : ''}>${esc(b.abbrev)} — ${esc(b.name)}</option>`).join('')
       || '<option value="">No Bible installed</option>';
+
+    // The second translation, for a congregation that reads in two languages. Only worth
+    // offering when there is more than one Bible installed.
+    const along = $('#bibleAlongside');
+    if (along) {
+      const others = S.bibles.filter((b) => b.id !== S.bibleId);
+      along.parentElement.hidden = others.length === 0;
+      along.innerHTML = '<option value="">On its own</option>' +
+        others.map((b) => `<option value="${esc(b.id)}" ${b.id === S.alongside ? 'selected' : ''}>with ${esc(b.abbrev)}</option>`).join('');
+      if (S.alongside && !others.some((b) => b.id === S.alongside)) S.alongside = null;
+    }
     await S.loadStructure();
   };
 
@@ -218,7 +229,16 @@
   S.item = () => {
     const ref = S.ref();
     const b = S.bible();
-    return { type: 'scripture', bibleId: S.bibleId, abbrev: b ? b.abbrev : '', ref, title: B.formatReference(ref) };
+    const item = { type: 'scripture', bibleId: S.bibleId, abbrev: b ? b.abbrev : '', ref, title: B.formatReference(ref) };
+    // A second translation, if the operator chose one: both go on the slide together.
+    if (S.alongside && S.alongside !== S.bibleId) {
+      const other = S.bibles.find((x) => x.id === S.alongside);
+      if (other) {
+        item.alongside = other.id;
+        item.alongsideAbbrev = other.abbrev;
+      }
+    }
+    return item;
   };
 
   S.addToService = () => {
@@ -265,8 +285,15 @@
     setupVerseSelection();
     $('#bibleSelect').addEventListener('change', async () => {
       S.bibleId = $('#bibleSelect').value;
-      await S.loadStructure();
+      await S.loadBibles();
     });
+    const along = $('#bibleAlongside');
+    if (along) {
+      along.addEventListener('change', () => {
+        S.alongside = along.value || null;
+        renderPeek();
+      });
+    }
     await S.loadBibles();
   };
 })();
