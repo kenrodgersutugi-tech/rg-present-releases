@@ -215,6 +215,8 @@ function tellOperator(channel, payload) {
  * install ever interrupts a service. An unreachable server is ignored.
  */
 async function autoUpdateRun() {
+  // A Store copy is Windows' to update, not ours (see updater.fromStore).
+  if (updater.fromStore()) return;
   const s = store.loadSettings();
   if (!s.updateFeedUrl || !s.autoCheckUpdates) return;
   let found;

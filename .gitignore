@@ -1,3 +1,4 @@
 
 # Probe scripts used to drive the app during development; never part of a build.
 app/*.cjs
+build/appx/

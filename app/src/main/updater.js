@@ -198,6 +198,7 @@ function backupData(label) {
 
 /** Download the installer, verify it, and keep it ready to run. */
 async function downloadApp(info, onProgress) {
+  if (fromStore()) throw new Error('This copy came from the Microsoft Store, which keeps it up to date for you.');
   if (!app.isPackaged) throw new Error('App updates can only be installed from an installed copy of RG-Present, not from a development build.');
   if (info.blocked) throw new Error(info.blocked);
   ensureDir();
@@ -221,6 +222,7 @@ async function downloadApp(info, onProgress) {
  * The installer is re-checked against its checksum immediately before it runs.
  */
 function applyApp({ silent = false } = {}) {
+  if (fromStore()) return { ok: false, reason: 'store' };
   const state = readState();
   if (!state || !state.installer || !fs.existsSync(state.installer)) {
     throw new Error('No downloaded update is waiting to be installed.');
@@ -329,12 +331,39 @@ function rollback() {
   return { reinstalled: false, to: target.to, restoredData: !!target.backupDir };
 }
 
+/**
+ * Installed from the Microsoft Store?
+ *
+ * A Store copy is updated by Windows, not by us. Microsoft forbids an app in the Store from
+ * fetching and running its own installer, and a church would end up with two update paths
+ * fighting over the same computer. So the whole self-update machine turns itself off, and the
+ * Updates window says plainly who is looking after it.
+ */
+function fromStore() {
+  return !!process.windowsStore;
+}
+
 function status() {
   const state = readState();
   const s = loadSettings();
+  if (fromStore()) {
+    return {
+      appVersion: app.getVersion(),
+      packaged: app.isPackaged,
+      store: true,
+      feed: '',
+      autoCheck: false,
+      autoInstall: false,
+      lastCheckedAt: null,
+      pending: null,
+      lastOutcome: null,
+      packs: (state && state.packs) || [],
+    };
+  }
   return {
     appVersion: app.getVersion(),
     packaged: app.isPackaged,
+    store: false,
     feed: s.updateFeedUrl || '',
     autoCheck: !!s.autoCheckUpdates,
     autoInstall: !!s.autoInstallUpdates,
@@ -348,6 +377,6 @@ function status() {
 }
 
 module.exports = {
-  check, downloadApp, applyApp, cancelPending, installPackUpdate,
+  check, downloadApp, applyApp, cancelPending, installPackUpdate, fromStore,
   startup, markHealthy, rollback, rollbackTarget, status, readState,
 };

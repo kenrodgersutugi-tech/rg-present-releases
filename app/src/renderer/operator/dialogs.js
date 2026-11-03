@@ -1170,6 +1170,17 @@
     const progressRow = (id) => `<div class="prog" data-prog="${esc(id)}" hidden><div class="bar"><i></i></div><span></span></div>`;
 
     const render = () => {
+      // A copy from the Microsoft Store is updated by Windows; there is nothing here to set.
+      if (st.store) {
+        d.q('#uBody').innerHTML = `<div class="form-grid">
+          <div class="field full"><span>Installed</span><div>RG-Present <b>${esc(st.appVersion)}</b></div></div>
+          <div class="field full"><div class="notice">This copy came from the <b>Microsoft Store</b>, so Windows keeps it up to date for you.
+            There is nothing to check and nothing to install here — a new version arrives on its own.</div></div>
+          <div class="field full"><span>Song, theme and Bible packs</span>
+            <div class="muted">Content packs still install from here; use <b>Install a pack</b> below.</div></div>
+        </div>`;
+        return;
+      }
       const feedSet = !!st.feed;
       const parts = [];
 

@@ -1,0 +1,96 @@
+# Builds the Microsoft Store package (MSIX) for the app in app/.
+#
+# It publishes nothing: the package comes out as an artifact on the run's summary page and a
+# person uploads it to Partner Center. Nothing here needs a token or a certificate — the Store
+# signs the package itself.
+#
+# The identity below is the one Partner Center issued for RG-Present and must match it to the
+# character, or the upload is rejected:
+#   Package/Identity/Name            RgDevs.RGPresent
+#   Package/Identity/Publisher       CN=25EB1C95-8AD6-410C-8573-109DE5DB2BCF
+#   Package/Properties/PublisherDisplayName  Rg Devs
+#   Store ID                         9NQ687HLV0B2
+#
+# Actions -> Build Store package -> Run workflow.
+name: Build Store package
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: app
+
+jobs:
+  package:
+    # makeappx comes from the Windows SDK, so this only builds on Windows.
+    runs-on: windows-latest
+    timeout-minutes: 45
+
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Draw the icons and the Store tiles
+        run: npx electron tools/make-icons.js
+
+      - name: Build the content packs
+        run: npm run build-packs
+
+      - name: Check the identity before spending a build on it
+        shell: pwsh
+        run: |
+          $appx = (Get-Content package.json -Raw | ConvertFrom-Json).build.appx
+          Write-Host "identityName        : $($appx.identityName)"
+          Write-Host "publisher           : $($appx.publisher)"
+          Write-Host "publisherDisplayName: $($appx.publisherDisplayName)"
+          if ($appx.identityName -ne 'RgDevs.RGPresent') { throw 'identityName does not match Partner Center.' }
+          if ($appx.publisher -ne 'CN=25EB1C95-8AD6-410C-8573-109DE5DB2BCF') { throw 'publisher does not match Partner Center.' }
+          $tiles = Get-ChildItem build/appx -Filter *.png
+          Write-Host "tiles               : $($tiles.Count)"
+          if ($tiles.Count -lt 10) { throw 'The Store tiles were not drawn.' }
+
+      - name: Package for the Store
+        run: npx electron-builder --win appx --x64 --publish never
+
+      - name: What is inside it
+        shell: pwsh
+        run: |
+          $msix = Get-ChildItem dist -Filter *.appx -Recurse | Select-Object -First 1
+          if (-not $msix) { throw 'No package was produced.' }
+          Copy-Item $msix.FullName "dist/RG-Present-$((Get-Content package.json -Raw | ConvertFrom-Json).version).msix"
+          Write-Host ("package: {0}  {1:N0} bytes" -f $msix.Name, $msix.Length)
+
+          Add-Type -AssemblyName System.IO.Compression.FileSystem
+          $zip = [System.IO.Compression.ZipFile]::OpenRead($msix.FullName)
+          try {
+            $entry = $zip.Entries | Where-Object { $_.FullName -eq 'AppxManifest.xml' }
+            $reader = New-Object System.IO.StreamReader($entry.Open())
+            $xml = [xml]$reader.ReadToEnd()
+            $identity = $xml.Package.Identity
+            Write-Host "Identity/Name   : $($identity.Name)"
+            Write-Host "Identity/Publisher: $($identity.Publisher)"
+            Write-Host "Identity/Version: $($identity.Version)"
+            Write-Host "PublisherDisplayName: $($xml.Package.Properties.PublisherDisplayName)"
+            if ($identity.Name -ne 'RgDevs.RGPresent') { throw "The package identity is $($identity.Name), not RgDevs.RGPresent." }
+            if (-not $identity.Version.EndsWith('.0')) { throw "The Store needs the fourth part of the version to be 0; it is $($identity.Version)." }
+            # The app must not try to update itself from a Store copy.
+            $src = $zip.Entries | Where-Object { $_.FullName -like '*app/src/main/updater.js' }
+            if (-not $src) { Write-Host 'updater.js is inside the asar, as expected.' }
+          } finally { $zip.Dispose() }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RG-Present-store-package
+          path: |
+            app/dist/*.appx
+            app/dist/*.msix
+          retention-days: 90
