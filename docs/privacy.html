@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en-GB" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Privacy policy — RG-Present</title>
+    <meta
+      name="description"
+      content="What RG-Present stores, what leaves your computer and what does not. RG-Present has no accounts, no analytics and no telemetry."
+    />
+    <link rel="icon" href="assets/icon-256.png" />
+    <link rel="stylesheet" href="assets/site.css" />
+    <meta name="theme-color" content="#0b0f14" />
+  </head>
+
+  <body>
+    <div class="wrap">
+      <header class="topbar">
+        <a class="home" href="index.html"
+          ><img
+            data-logo
+            data-logo-dark="assets/logo-full-dark.svg"
+            data-logo-light="assets/logo-full-light.svg"
+            src="assets/logo-full-dark.svg"
+            alt="RG-Present"
+        /></a>
+        <nav>
+          <a href="index.html">Overview</a>
+          <a href="guide.html">Setup guide</a>
+          <a href="download.html">Download</a>
+        </nav>
+        <button class="theme-toggle" id="theme" type="button">Light</button>
+      </header>
+
+      <div class="hero">
+        <h1>Privacy policy</h1>
+        <p class="lede">
+          RG-Present has no accounts, no sign-in, no analytics and no telemetry. Your songs,
+          services, media and settings stay on your own computer, and we never see them.
+        </p>
+      </div>
+
+      <div class="prose">
+        <p class="updated">
+          Last updated 5 November 2026. This policy covers the RG-Present software for Windows and
+          this website.
+        </p>
+
+        <h2 id="who">Who we are</h2>
+        <p>
+          RG-Present is made and published by <strong>RG Devs</strong>, Kenya. For anything in this
+          policy, including a request about your own data, write to
+          <a data-link="email" href="#">-</a>.
+        </p>
+
+        <h2 id="short">The short version</h2>
+        <ul>
+          <li>We do not collect anything about you or your church.</li>
+          <li>
+            Your library &mdash; songs, services, imported Bibles, pictures, video and settings
+            &mdash; is stored only on your computer, in a folder you can open, copy and delete.
+          </li>
+          <li>There are no accounts, no licence keys and no sign-in.</li>
+          <li>There is no analytics, no tracking and no crash reporting.</li>
+          <li>
+            Four things can leave your computer, and only in the circumstances set out below: the
+            update check, the web browser you choose to open, the optional AI helpers you choose to
+            turn on, and anything you export yourself.
+          </li>
+          <li>This website sets no cookies and has no trackers.</li>
+        </ul>
+
+        <h2 id="stored">What RG-Present stores, and where</h2>
+        <p>
+          Everything is kept in one folder on your computer:
+          <strong>%APPDATA%\RG-Present\data</strong> (Settings opens it for you). It holds:
+        </p>
+        <ul>
+          <li>the hymn library, including songs you add or import;</li>
+          <li>your saved services and the order of each one;</li>
+          <li>Bibles that ship with the program and any you import;</li>
+          <li>pictures, video, music and imported presentations;</li>
+          <li>your themes and settings;</li>
+          <li>
+            your Gemini API key, if you choose to add one. It is stored on this computer so the
+            program can use it, and is sent to Google and to nobody else.
+          </li>
+        </ul>
+        <p>
+          None of this is uploaded anywhere. Copying or deleting that folder copies or deletes your
+          data, and uninstalling RG-Present leaves it alone on purpose, so an update never costs you
+          your library.
+        </p>
+
+        <h2 id="leaves">What leaves your computer</h2>
+
+        <h3>1. The update check</h3>
+        <p>
+          RG-Present asks GitHub whether a newer version has been published, and downloads it if so.
+          The request contains no information about you or your library. GitHub, as the host, will
+          see the usual things any web server sees: your IP address, the time, and which file was
+          asked for. GitHub's own privacy statement governs that.
+        </p>
+        <p>
+          The check never happens while something is on the audience screen, and it can be turned
+          off in Settings. If you installed RG-Present from the Microsoft Store, Microsoft handles
+          updating instead and RG-Present makes no update request of its own.
+        </p>
+
+        <h3>2. The web browser</h3>
+        <p>
+          The browser built into RG-Present only does anything when you open it. Searching uses
+          <strong>DuckDuckGo</strong>, and any page you then visit is an ordinary visit to that
+          site, which will see what any website sees. The browser keeps its own separate storage,
+          refuses the camera and microphone, and blocks downloads. Nothing it does can reach your
+          library or your service.
+        </p>
+
+        <h3>3. The optional AI helpers</h3>
+        <p>
+          These do nothing at all until you put a Gemini API key of your own into Settings, and then
+          only when you ask a question. When you do, the request goes directly from your computer to
+          <strong>Google</strong> (generativelanguage.googleapis.com) and nowhere else. It never
+          passes through us, and we never see it.
+        </p>
+        <p>What is sent depends on what you asked for:</p>
+        <table>
+          <thead>
+            <tr>
+              <th>When you ask for</th>
+              <th>What is sent to Google</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>A hymn</td>
+              <td>
+                Your description, and a list of the hymns in your library &mdash; number, title,
+                any alternative title and folder. Lyrics are not sent.
+              </td>
+            </tr>
+            <tr>
+              <td>A reading</td>
+              <td>Your description only. No Bible text is sent.</td>
+            </tr>
+            <tr>
+              <td>A service plan</td>
+              <td>
+                The theme you typed, and the same list of hymn numbers, titles and folders.
+              </td>
+            </tr>
+            <tr>
+              <td>Notices turned into slides</td>
+              <td>The notes you pasted in.</td>
+            </tr>
+            <tr>
+              <td>A generated background</td>
+              <td>The description of the picture you asked for.</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+          Google's handling of that request is governed by Google's own terms for the Gemini API,
+          including what it may do with the content you send, which depends on the kind of Google
+          account and plan the key belongs to. Please read those terms before you turn this on, and
+          do not paste anything confidential &mdash; a pastoral note, a member's details &mdash;
+          into an AI prompt.
+        </p>
+        <p>
+          Remove the key in Settings and every one of these features stops at once. Nothing else in
+          RG-Present depends on it.
+        </p>
+
+        <h3>4. Anything you export yourself</h3>
+        <p>
+          Printing a service, exporting your songs as a pack, or copying your data folder sends that
+          material wherever you send it. That is your decision and your copy.
+        </p>
+
+        <h2 id="notcollected">What we never collect</h2>
+        <ul>
+          <li>Nothing about the services you run, the songs you sing or the passages you read.</li>
+          <li>No names, addresses, phone numbers or membership records &mdash; RG-Present has no place to put them.</li>
+          <li>No usage statistics, no &ldquo;anonymous&rdquo; analytics, no crash reports.</li>
+          <li>No device identifiers, licences or machine fingerprints.</li>
+        </ul>
+        <p>
+          If you email us for help, we have whatever you put in that email, and we use it only to
+          answer you.
+        </p>
+
+        <h2 id="website">This website</h2>
+        <ul>
+          <li>
+            It is hosted on <strong>GitHub Pages</strong>. GitHub keeps server logs, which include
+            visitors' IP addresses, under its own privacy statement. We do not have access to them
+            as a report and we do not analyse them.
+          </li>
+          <li>
+            The download and overview pages ask GitHub's public API which version is the latest, so
+            the page can show the version number, date, size and checksum. That request carries
+            nothing about you.
+          </li>
+          <li>
+            There are no cookies, no analytics, no advertising and no third-party scripts, fonts or
+            images. Everything the pages need is served from this site.
+          </li>
+          <li>
+            Whether you chose the light or the dark theme is remembered in your own browser's local
+            storage. It never leaves your browser, and clearing your browsing data removes it.
+          </li>
+          <li>
+            Links to the Microsoft Store and to GitHub take you to those companies' sites, which
+            have their own policies.
+          </li>
+        </ul>
+
+        <h2 id="children">Children</h2>
+        <p>
+          RG-Present is a tool for running a service and is not directed at children. It collects no
+          personal data from anybody, of any age.
+        </p>
+
+        <h2 id="rights">Your rights under Kenyan law</h2>
+        <p>
+          The Data Protection Act, 2019 gives you rights over personal data held about you &mdash;
+          to be told about it, to see it, to have it corrected or deleted, and to object to its use.
+          Because RG-Present holds no personal data about its users on any system of ours, in
+          practice there is usually nothing for us to show you or delete. If you have written to us
+          and want that correspondence deleted, or you believe we hold something about you, write to
+          <a data-link="email" href="#">-</a> and we will deal with it within the time the Act
+          allows.
+        </p>
+        <p>
+          If your church uses RG-Present to show material that includes personal data &mdash; a name
+          in a notice, a photograph of a member &mdash; your church is the one responsible for that
+          material, not us.
+        </p>
+
+        <h2 id="security">Keeping your library safe</h2>
+        <p>
+          Because everything is on your own computer, its safety is the safety of that computer:
+          keep Windows up to date, use a password on the machine, and copy your data folder to a
+          flash drive from time to time. Only ever download RG-Present from this website or from the
+          Microsoft Store.
+        </p>
+
+        <h2 id="changes">Changes to this policy</h2>
+        <p>
+          If RG-Present ever starts doing something this policy does not describe, the policy will
+          be updated here first, with the date at the top changed. We will not add tracking or
+          telemetry quietly.
+        </p>
+
+        <h2 id="contact">Contact</h2>
+        <p>
+          <a data-link="email" href="#">-</a> &mdash; RG Devs, Kenya. See also the
+          <a href="terms.html">terms and conditions</a>.
+        </p>
+      </div>
+
+      <footer class="site">
+        <span>RG-Present is made by RG Devs in Kenya.</span>
+        <span class="spacer"></span>
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
+        <span>&copy; <span data-year>2026</span> RG Devs</span>
+      </footer>
+    </div>
+
+    <script src="assets/site.js"></script>
+  </body>
+</html>

@@ -1,0 +1,754 @@
+<!doctype html>
+<html lang="en-GB" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Setting up RG-Present — the guide</title>
+    <meta
+      name="description"
+      content="How to install RG-Present, connect the projector, build a service and run it on Sunday. Written for a volunteer who has not seen the program before."
+    />
+    <link rel="icon" href="assets/icon-256.png" />
+    <link rel="stylesheet" href="assets/site.css" />
+    <meta name="theme-color" content="#0b0f14" />
+  </head>
+
+  <body>
+    <div class="wrap">
+      <header class="topbar no-print">
+        <a class="home" href="index.html"
+          ><img
+            data-logo
+            data-logo-dark="assets/logo-full-dark.svg"
+            data-logo-light="assets/logo-full-light.svg"
+            src="assets/logo-full-dark.svg"
+            alt="RG-Present"
+        /></a>
+        <nav>
+          <a href="index.html">Overview</a>
+          <a href="guide.html" aria-current="page">Setup guide</a>
+          <a href="download.html">Download</a>
+        </nav>
+        <button class="theme-toggle" id="theme" type="button">Light</button>
+      </header>
+
+      <!-- Only paper and the PDF see this: on screen the top bar does the job. -->
+      <div class="print-only" aria-hidden="true">
+        <img src="assets/logo-full-light.svg" alt="" />
+        <span>Setup guide</span>
+      </div>
+
+      <div class="hero">
+        <h1>Setting up RG-Present</h1>
+        <p class="lede">
+          Everything from opening the installer to running your first service: written for a
+          volunteer who has not seen the program before, and short enough to read on a Saturday
+          afternoon.
+        </p>
+        <div class="actions no-print">
+          <a class="btn" href="RG-Present-Setup-Guide.pdf" download>
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M12 3v12" />
+              <path d="m7 10 5 5 5-5" />
+              <path d="M5 21h14" />
+            </svg>
+            Download this as a PDF
+          </a>
+          <a class="btn quiet" href="download.html">Download RG-Present</a>
+        </div>
+        <p class="meta">
+          For RG-Present on Windows 10 and 11. Keep a printed copy beside the church laptop.
+        </p>
+      </div>
+
+      <div class="prose">
+        <nav class="toc" aria-label="Contents">
+          <h2>Contents</h2>
+          <ol>
+            <li><a href="#need">What you need</a></li>
+            <li><a href="#install">Installing it</a></li>
+            <li><a href="#projector">Connecting the projector</a></li>
+            <li><a href="#first">The first five minutes</a></li>
+            <li><a href="#screen">The screen in front of you</a></li>
+            <li><a href="#service">Building a service</a></li>
+            <li><a href="#running">Running the service</a></li>
+            <li><a href="#scripture">Readings</a></li>
+            <li><a href="#stage">The stage display</a></li>
+            <li><a href="#songs">Your own songs</a></li>
+            <li><a href="#media">Pictures, video and PowerPoint</a></li>
+            <li><a href="#themes">Themes and backgrounds</a></li>
+            <li><a href="#music">Music</a></li>
+            <li><a href="#web">The web browser</a></li>
+            <li><a href="#ai">The optional helpers</a></li>
+            <li><a href="#settings">Settings worth knowing</a></li>
+            <li><a href="#keys">Keyboard shortcuts</a></li>
+            <li><a href="#library">Looking after your library</a></li>
+            <li><a href="#older">Coming from an older RG-Present</a></li>
+            <li><a href="#wrong">When something goes wrong</a></li>
+            <li><a href="#help">Getting help</a></li>
+          </ol>
+        </nav>
+
+        <h2 id="need">1. What you need</h2>
+        <ul>
+          <li><strong>A Windows laptop or desktop</strong>, Windows 10 or 11, 64-bit.</li>
+          <li><strong>4 GB of memory</strong> or more. Built-in Intel graphics are fine.</li>
+          <li>
+            <strong>A projector or television</strong> connected by HDMI. This is the screen the
+            congregation sees.
+          </li>
+          <li><strong>About 400 MB of free disk</strong>, plus room for your own pictures and video.</li>
+          <li>
+            <strong>An internet connection once</strong>, to download the installer. After that
+            RG-Present works with no internet at all.
+          </li>
+        </ul>
+
+        <h2 id="install">2. Installing it</h2>
+        <ol>
+          <li>
+            Go to the download page and choose <strong>Download the installer</strong>. The file is
+            called <strong>RG-Present-Setup.exe</strong> and is about 120 MB.
+          </li>
+          <li>Open it from your Downloads folder.</li>
+          <li>
+            Windows shows a blue box saying <strong>&ldquo;Windows protected your PC&rdquo;</strong>.
+            This is not a virus warning. It appears because the installer is not signed with a paid
+            certificate yet. Click <strong>More info</strong>, then <strong>Run anyway</strong>.
+          </li>
+          <li>
+            Choose where to install it. The suggested folder suits almost everyone. Installation
+            takes about a minute.
+          </li>
+          <li>
+            RG-Present opens with 3,648 hymns and the King James Version already in it. There is
+            nothing else to download.
+          </li>
+        </ol>
+        <p>
+          If your church machine blocks installers, you can install the same program from the
+          <strong>Microsoft Store</strong> instead &mdash; it is signed by Microsoft and shows no
+          warning. The download page has the link.
+        </p>
+
+        <h3>Installing without internet at the church</h3>
+        <p>
+          Download the installer somewhere that has a connection, copy it onto a flash drive, and
+          run it on the church machine. Everything RG-Present needs is inside that one file.
+        </p>
+
+        <h2 id="projector">3. Connecting the projector</h2>
+        <ol>
+          <li>Plug the projector or TV into the laptop with an HDMI cable and switch it on.</li>
+          <li>Press <kbd>Windows</kbd> + <kbd>P</kbd> on the keyboard.</li>
+          <li>
+            Choose <strong>Extend</strong>. This is the important one. <strong>Duplicate</strong>
+            puts your own desktop on the wall, which is exactly what we are trying to avoid.
+          </li>
+        </ol>
+        <p>
+          With <strong>Extend</strong>, Windows treats the projector as a second screen. RG-Present
+          puts the slides there and keeps all its controls on your laptop screen.
+        </p>
+
+        <h2 id="first">4. The first five minutes</h2>
+        <ol>
+          <li>
+            Open RG-Present. The first thing to press is <strong>Output</strong>, at the top right.
+            The dot beside it turns green and the slides appear on the projector.
+          </li>
+          <li>
+            If the slides land on the wrong screen, open <strong>Settings</strong> and set
+            <strong>Audience output screen</strong> to the projector by name. RG-Present remembers
+            this.
+          </li>
+          <li>
+            In the library at the bottom, type part of a hymn you know into the search box and
+            <strong>double-click it</strong>. It goes straight onto the projector. That is the
+            quickest thing the program does, and the one worth practising.
+          </li>
+          <li>
+            Press <kbd>Space</kbd> for the next verse, <kbd>B</kbd> to black the screen, and
+            <kbd>B</kbd> again to bring it back.
+          </li>
+          <li>
+            Put your church logo on the screen between items: add the picture under
+            <strong>Media</strong>, then choose it in <strong>Settings</strong> as the
+            <strong>Logo screen</strong>. From then on <kbd>L</kbd> shows it.
+          </li>
+        </ol>
+
+        <h2 id="screen">5. The screen in front of you</h2>
+        <p>The window has four parts, left to right and top to bottom.</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Part</th>
+              <th>What it is for</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Service</td>
+              <td>
+                The order of the morning, top to bottom. Hymns, readings, notices, videos and
+                headings. Drag the lines to reorder them.
+              </td>
+            </tr>
+            <tr>
+              <td>Preview</td>
+              <td>
+                What you are getting ready. Nothing here is on the projector. Click a slide to
+                choose it, then press <strong>Go Live</strong>.
+              </td>
+            </tr>
+            <tr>
+              <td>Live</td>
+              <td>
+                What the congregation can see right now, inside a red frame, with the controls for
+                it underneath.
+              </td>
+            </tr>
+            <tr>
+              <td>Library</td>
+              <td>
+                Everything you can draw on: Songs, Scripture, Media, Presentations and your saved
+                services.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+          The dividing lines between the panels can be dragged if you want more room for one of
+          them, and RG-Present remembers where you left them.
+        </p>
+        <p>
+          <strong>Red always means live.</strong> If something has a red frame or a red dot, the
+          congregation is looking at it.
+        </p>
+
+        <h2 id="service">6. Building a service</h2>
+        <p>
+          You do not have to build a service to use RG-Present &mdash; double-clicking things in the
+          library works all morning. But a service saves repeating yourself, and lets somebody else
+          run the desk.
+        </p>
+        <ol>
+          <li>
+            <strong>Add the hymns.</strong> Find each one in the library and drag it into the
+            Service panel, or select it and press <strong>Add to service</strong>.
+          </li>
+          <li>
+            <strong>Add the readings.</strong> On the Scripture tab, choose the book, the chapter
+            and the verses, then drag the reading into the service.
+          </li>
+          <li>
+            <strong>Name the lines the way your church does.</strong> Click the pencil on a line and
+            call it <em>First reading</em>, <em>Offertory</em>, <em>Sermon</em>. The name is yours;
+            the content underneath does not change.
+          </li>
+          <li>
+            <strong>Group them under headings.</strong> The folder button at the top of the Service
+            panel adds a heading &mdash; Gathering, The Word, Sending out. Click a heading to fold
+            everything under it out of the way.
+          </li>
+          <li>
+            <strong>Add the other bits.</strong> The three small buttons beside it add a text or
+            announcement slide, a picture or video, and a countdown to the start of the service.
+          </li>
+          <li>
+            <strong>Leave notes for the people at the front.</strong> The note button on a line
+            takes a line such as &ldquo;Key of G, two verses only&rdquo;. It appears on the stage
+            display and never on the projector.
+          </li>
+          <li>
+            <strong>Save it</strong> with <kbd>Ctrl</kbd> + <kbd>S</kbd>, and give it the date. It
+            is then under <strong>Saved services</strong> for next time. <kbd>Ctrl</kbd> +
+            <kbd>P</kbd> prints the order for the people leading.
+          </li>
+        </ol>
+        <p>
+          Files dropped onto the Service panel from Windows Explorer &mdash; pictures, videos,
+          PowerPoints, PDFs &mdash; are brought in and added where you dropped them.
+        </p>
+
+        <h2 id="running">7. Running the service</h2>
+        <p>Two habits make Sunday calm:</p>
+        <ul>
+          <li>
+            <strong>Cue in Preview, then Go Live.</strong> Click the next item while the current one
+            is still on the screen. Nothing you do in Preview can reach the projector.
+          </li>
+          <li>
+            <strong>Double-tap when you are caught out.</strong> If the preacher names a verse you
+            were not expecting, find it and double-tap: it goes on the screen immediately and does
+            not change your service.
+          </li>
+        </ul>
+        <table>
+          <thead>
+            <tr>
+              <th>Button</th>
+              <th>What it does</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Go Live</td>
+              <td>Sends what is in Preview to the projector.</td>
+            </tr>
+            <tr>
+              <td>&lsaquo; and &rsaquo;</td>
+              <td>Previous and next slide. <kbd>Space</kbd> also moves on.</td>
+            </tr>
+            <tr>
+              <td>Black</td>
+              <td>Takes the screen to black. Nothing is lost; press it again to come back.</td>
+            </tr>
+            <tr>
+              <td>Clear</td>
+              <td>Takes the words away and leaves the background. Useful during prayer.</td>
+            </tr>
+            <tr>
+              <td>Logo</td>
+              <td>Shows your church logo or picture, set in Settings.</td>
+            </tr>
+            <tr>
+              <td>Message</td>
+              <td>
+                Puts a line of text across the screen &mdash; a car to move, a child to collect
+                &mdash; over whatever is already there.
+              </td>
+            </tr>
+            <tr>
+              <td>Read on</td>
+              <td>
+                Appears during a reading. Carries on into the next verses, and on into the next
+                chapter, without going back to the library.
+              </td>
+            </tr>
+            <tr>
+              <td>A&minus; / A+</td>
+              <td>
+                Makes the words on the projector smaller or bigger, there and then. The percentage
+                between them puts it back to 100%.
+              </td>
+            </tr>
+            <tr>
+              <td>Auto</td>
+              <td>
+                Moves on by itself every few seconds &mdash; for a set of notices before the service
+                starts. The box beside it is the number of seconds.
+              </td>
+            </tr>
+            <tr>
+              <td>Fade / Slow fade / Cut</td>
+              <td>How one slide becomes the next.</td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+          When a video is live, its own controls appear: pause, sound on or off, and whether it
+          plays again when it ends.
+        </p>
+
+        <h2 id="scripture">8. Readings</h2>
+        <p>There are three ways to find a passage, and all of them end up in the same place.</p>
+        <ul>
+          <li>
+            <strong>Type the reference</strong> into the search box on the Scripture tab:
+            <strong>John 3:16-18</strong>, <strong>jn 3 16</strong>, <strong>Ps 23</strong>,
+            <strong>1 cor 13</strong>.
+          </li>
+          <li>
+            <strong>Pick it from the lists</strong>: the book down the left, then the chapter, then
+            the verses. Tap one verse, or drag down the list for a range.
+          </li>
+          <li>
+            <strong>Search for words</strong> you remember, and RG-Present finds the verses that
+            contain them.
+          </li>
+        </ul>
+        <p>
+          <strong>Double-tap a verse</strong> and it is on the screen. Drag the passage into the
+          Service panel to keep it for Sunday.
+        </p>
+        <p>
+          A reading goes up one verse at a time by default, with the reference big enough to read
+          from the back. Settings changes that to two, three, four verses, or as many as the slide
+          will hold.
+        </p>
+        <h3>Two translations at once</h3>
+        <p>
+          The second picker on the Scripture tab puts another translation on the same slide,
+          underneath the first &mdash; for a congregation that reads in two languages.
+        </p>
+        <h3>Adding a translation your church is licensed to use</h3>
+        <p>
+          Only public-domain Bibles are shipped with RG-Present, so a translation your church has
+          bought or holds a licence for is one you add yourself:
+          <strong>Settings &rarr; Import Bible&hellip;</strong>, from an XML, OSIS, JSON, CSV, TSV
+          or plain text file. It then appears beside the King James Version everywhere.
+        </p>
+
+        <h2 id="stage">9. The stage display</h2>
+        <p>
+          If you have a third screen &mdash; a television facing the musicians, or a tablet &mdash;
+          press <strong>Stage</strong> at the top right. It shows the slide that is live, the one
+          coming next, a clock, and any notes you left on that line of the service.
+        </p>
+        <p>
+          Choose which screen it uses under <strong>Settings &rarr; Stage display screen</strong>.
+          Nothing on the stage display ever reaches the congregation.
+        </p>
+
+        <h2 id="songs">10. Your own songs</h2>
+        <h3>Typing one in</h3>
+        <p>
+          The <strong>+</strong> beside the search box opens a blank song. Give it a title, a number
+          if your church uses them, and type the verses. A blank line starts a new slide, and words
+          such as <em>Chorus</em> or <em>Verse 2</em> on a line of their own are recognised as
+          labels.
+        </p>
+        <h3>Styling single words</h3>
+        <p>
+          While editing a song, select a word or a line and use the small bar above the box to make
+          it bold or italic, change its colour, its font or its size. Everything else on the slide
+          keeps the theme. It is meant for a refrain in another language, or a line that should
+          stand out &mdash; not for decorating a whole hymn.
+        </p>
+        <h3>Importing a folder of songs</h3>
+        <p>
+          <strong>Import</strong> in the top bar reads TXT, CSV, Word (.docx) and PowerPoint
+          (.pptx) files. RG-Present shows you what it found before anything is added, so you can fix
+          a title or drop a file that came in wrong. Words that mean &ldquo;chorus&rdquo; in your
+          language can be added under Settings, so they are picked out properly.
+        </p>
+
+        <h2 id="media">11. Pictures, video and PowerPoint</h2>
+        <p>
+          The <strong>Media</strong> tab holds your pictures, videos and music.
+          <strong>Add images or videos</strong> brings files in; so does dragging them from
+          Explorer. A picture or video fills the projector edge to edge, whatever shape it is
+          &mdash; there are no black bars down the sides.
+        </p>
+        <p>
+          The <strong>Presentations</strong> tab takes a PowerPoint or a PDF and keeps each slide as
+          a picture. That matters: the deck still shows on Sunday after the laptop it was made on
+          has gone home, and it needs no copy of PowerPoint. Drag it into the service like anything
+          else.
+        </p>
+
+        <h2 id="themes">12. Themes and backgrounds</h2>
+        <p>
+          A <strong>theme</strong> is the look of a slide: the font, the size, the colour, where the
+          words sit, the shadow behind them and the background. <strong>Themes</strong> in the top
+          bar makes new ones and edits the ones you have.
+        </p>
+        <ul>
+          <li>
+            Give <strong>scripture its own theme</strong> under Settings, so a reading never looks
+            like a hymn.
+          </li>
+          <li>
+            Give <strong>one item its own background</strong> with the picture button at the top of
+            the Preview panel &mdash; a photograph behind the closing hymn, say.
+          </li>
+          <li>
+            Keep the words readable. White on a dark picture carries to the back of a hall; grey on
+            a bright one does not.
+          </li>
+        </ul>
+
+        <h2 id="music">13. Music</h2>
+        <p>
+          Music files added under Media can be played from there &mdash; something quiet before the
+          service, or under the notices. While it plays, a small music bar appears under the live
+          controls with pause, loop, volume and stop.
+        </p>
+        <p>
+          By default the music fades out as soon as something goes on the screen, which is usually
+          what you want. Turn that off in Settings if you would rather it carried on.
+        </p>
+
+        <h2 id="web">14. The web browser</h2>
+        <p>
+          <strong>Web</strong> in the top bar (or <kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>W</kbd>)
+          opens a browser in a window of its own, on your screen &mdash; never on the projector.
+          Search or type an address. When you want the congregation to see the page, put it on the
+          screen deliberately; a bar at the bottom of RG-Present reminds you it is there and takes
+          it off again.
+        </p>
+        <p>
+          The browser is kept apart from the service on purpose: it has its own sandbox, it is
+          refused the camera and microphone, and downloads are blocked. The open web cannot reach
+          your library or your projector.
+        </p>
+
+        <h2 id="ai">15. The optional helpers</h2>
+        <p>
+          RG-Present is complete without this, and it does nothing until you add a key of your own.
+          If you have a Google account you can get a free Gemini API key at
+          <strong>aistudio.google.com</strong> and paste it into
+          <strong>Settings &rarr; Gemini key</strong>. Then <strong>Ask</strong> in the top bar
+          (<kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>A</kbd>) can:
+        </p>
+        <ul>
+          <li>
+            find a hymn you half remember &mdash; <em>from your own library</em>, with its number,
+            never invented;
+          </li>
+          <li>
+            suggest readings for a theme &mdash; it returns references, and your own Bible supplies
+            the words;
+          </li>
+          <li>draft an order of service for you to edit;</li>
+          <li>turn a page of notices into slides;</li>
+          <li>
+            generate a background picture from the theme of the service, if image generation is
+            enabled on your Google account.
+          </li>
+        </ul>
+        <p>
+          Nothing is sent anywhere until you ask a question, and the words that go on the screen
+          always come from your own library and your own Bible. The key stays on your computer and
+          can be deleted at any time. See the privacy policy on the website for the detail.
+        </p>
+
+        <h2 id="settings">16. Settings worth knowing</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Setting</th>
+              <th>Why you would change it</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Audience output screen</td>
+              <td>The slides are on the wrong screen, or you have more than two.</td>
+            </tr>
+            <tr>
+              <td>Stage display screen</td>
+              <td>Which screen the musicians' display uses.</td>
+            </tr>
+            <tr>
+              <td>Default transition and fade length</td>
+              <td>A slower fade reads as calmer; <strong>Cut</strong> is instant.</td>
+            </tr>
+            <tr>
+              <td>Max lines per slide</td>
+              <td>Long verses are split into readable slides. Set it to 0 never to split.</td>
+            </tr>
+            <tr>
+              <td>Repeat the chorus after every verse</td>
+              <td>For congregations that sing it that way, without editing the hymn.</td>
+            </tr>
+            <tr>
+              <td>Text size on screen</td>
+              <td>
+                A permanent setting for a small hall or a big one. A&minus; and A+ change it for
+                the moment.
+              </td>
+            </tr>
+            <tr>
+              <td>Logo screen</td>
+              <td>The picture the <kbd>L</kbd> key shows.</td>
+            </tr>
+            <tr>
+              <td>Default Bible, verses per slide, reference size</td>
+              <td>How readings look and how much goes up at once.</td>
+            </tr>
+            <tr>
+              <td>Font for every slide</td>
+              <td>
+                One font across themes that do not name their own. A theme's own font still wins.
+              </td>
+            </tr>
+            <tr>
+              <td>Fallback fonts</td>
+              <td>
+                So letters such as the Kimeru <strong>&#x129;</strong> and
+                <strong>&#x169;</strong> always draw correctly.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h2 id="keys">17. Keyboard shortcuts</h2>
+        <p>These work whenever you are not typing in a box.</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Key</th>
+              <th>What it does</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td><kbd>Space</kbd> or <kbd>&rarr;</kbd></td><td>Next slide</td></tr>
+            <tr><td><kbd>&larr;</kbd></td><td>Previous slide</td></tr>
+            <tr><td><kbd>Enter</kbd></td><td>Send Preview to the screen</td></tr>
+            <tr><td><kbd>B</kbd></td><td>Black screen on or off</td></tr>
+            <tr><td><kbd>C</kbd></td><td>Hide the words, keep the background</td></tr>
+            <tr><td><kbd>L</kbd></td><td>Logo screen</td></tr>
+            <tr><td><kbd>R</kbd></td><td>Jump to the chorus</td></tr>
+            <tr><td><kbd>1</kbd>&hellip;<kbd>9</kbd></td><td>Jump to that verse or slide</td></tr>
+            <tr><td><kbd>]</kbd></td><td>Read on into the next verses</td></tr>
+            <tr><td><kbd>Esc</kbd></td><td>Take black, clear or logo off again</td></tr>
+            <tr><td><kbd>K</kbd> / <kbd>M</kbd></td><td>Pause a video / its sound on or off</td></tr>
+            <tr><td><kbd>+</kbd> / <kbd>&minus;</kbd></td><td>Words bigger or smaller on the screen</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>0</kbd></td><td>Back to 100%</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>F</kbd></td><td>Jump to the library search box</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>K</kbd></td><td>Quick find: anything, by typing</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>M</kbd></td><td>Message across the screen</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>N</kbd> / <kbd>O</kbd> / <kbd>S</kbd> / <kbd>P</kbd></td><td>New, open, save, print the service</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>W</kbd></td><td>The web browser</td></tr>
+            <tr><td><kbd>Ctrl</kbd> + <kbd>Shift</kbd> + <kbd>A</kbd></td><td>Ask (needs a Gemini key)</td></tr>
+            <tr><td><kbd>F2</kbd></td><td>Rename the line you are on</td></tr>
+          </tbody>
+        </table>
+
+        <h2 id="library">18. Looking after your library</h2>
+        <h3>Where everything is kept</h3>
+        <p>
+          Your songs, services, media, imported Bibles and settings live in one folder:
+          <strong>%APPDATA%\RG-Present\data</strong>. The quickest way there is
+          <strong>Settings &rarr; Data folder</strong>, which opens it. Installing a new version
+          never touches it.
+        </p>
+        <h3>Backing up</h3>
+        <p>
+          Copy that folder to a flash drive now and again &mdash; before a big service is a good
+          habit. To move to a new machine, install RG-Present there and copy the folder across with
+          RG-Present closed.
+        </p>
+        <p>
+          <strong>Settings &rarr; Export songs as pack&hellip;</strong> writes your own songs to a
+          single file you can carry to another church machine and install there.
+        </p>
+        <h3>Updates</h3>
+        <p>
+          RG-Present checks quietly for a new version and never interrupts a service. When one has
+          downloaded it is installed as you close the program. If the church machine has no
+          internet, download the installer elsewhere and run it over the top: everything is kept.
+        </p>
+        <p>
+          If you installed from the Microsoft Store, the Store does the updating instead.
+        </p>
+
+        <h2 id="older">19. Coming from an older RG-Present</h2>
+        <p>
+          Install the new version straight over the old one. Your songs, saved services, imported
+          Bibles, media and settings are all in the data folder, which the installer does not touch,
+          so everything is where you left it when you open it again.
+        </p>
+        <p>
+          You do not need to uninstall first, and you should not delete the data folder if you are
+          ever asked.
+        </p>
+
+        <h2 id="wrong">20. When something goes wrong</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>What you see</th>
+              <th>What to do</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Your desktop is on the wall</td>
+              <td>
+                Windows is duplicating rather than extending. <kbd>Windows</kbd> + <kbd>P</kbd>,
+                then <strong>Extend</strong>.
+              </td>
+            </tr>
+            <tr>
+              <td>The slides are on the laptop and the projector is blank</td>
+              <td>
+                Press <strong>Output</strong> so its dot is green, then set the right screen under
+                Settings.
+              </td>
+            </tr>
+            <tr>
+              <td>Nothing on the projector but black</td>
+              <td>
+                The screen may be blacked. Press <kbd>B</kbd>, or <kbd>Esc</kbd>, and look at the
+                Black, Clear and Logo buttons &mdash; a lit one is holding the screen.
+              </td>
+            </tr>
+            <tr>
+              <td>The words are too small at the back</td>
+              <td>
+                Press A+ a few times during the service, or set a bigger <strong>Text size on
+                screen</strong> in Settings for good.
+              </td>
+            </tr>
+            <tr>
+              <td>A verse is cut off at the bottom</td>
+              <td>
+                Lower <strong>Max lines per slide</strong>, or give that song a theme with a smaller
+                font.
+              </td>
+            </tr>
+            <tr>
+              <td>Windows warns about the installer</td>
+              <td>
+                Expected, and explained in section 2. <strong>More info</strong>, then
+                <strong>Run anyway</strong> &mdash; or install from the Microsoft Store.
+              </td>
+            </tr>
+            <tr>
+              <td>The projector shows the wrong shape</td>
+              <td>
+                Set the projector to 16:9 in its own menu and make sure Windows is giving that screen
+                its full resolution.
+              </td>
+            </tr>
+            <tr>
+              <td>It will not start after a power cut</td>
+              <td>
+                Open it again: your service is saved. If it still will not, email us before Sunday
+                and say what the screen shows.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h2 id="help">21. Getting help</h2>
+        <p>
+          Email <a data-link="email" href="#">-</a> with what you were doing and what you saw. A
+          photograph of the screen helps more than a description.
+        </p>
+        <p>
+          The website &mdash; overview, downloads, this guide, the privacy policy and the terms
+          &mdash; is at
+          <strong>kenrodgersutugi-tech.github.io/rg-present-releases</strong>.
+        </p>
+        <p class="meta">
+          RG-Present is made by RG Devs in Kenya. This guide covers version 1.8 and later.
+        </p>
+      </div>
+
+      <footer class="site no-print">
+        <span>RG-Present is made by RG Devs in Kenya.</span>
+        <span class="spacer"></span>
+        <a href="privacy.html">Privacy</a>
+        <a href="terms.html">Terms</a>
+        <span>&copy; <span data-year>2026</span> RG Devs</span>
+      </footer>
+    </div>
+
+    <script src="assets/site.js"></script>
+  </body>
+</html>
