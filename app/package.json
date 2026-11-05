@@ -1,7 +1,7 @@
 {
   "name": "rg-present",
   "productName": "RG-Present",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "Worship presentation software for Windows \u2014 hymns, Bibles, themes and dual-screen output.",
   "main": "src/main/main.js",
   "author": {

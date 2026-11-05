@@ -5,6 +5,32 @@ App, database schema and content packs are versioned separately:
 - **Schema version**: `MIGRATIONS` in `src/main/db.js` (the library is backed up before every upgrade).
 - **Content pack versions**: each pack's `manifest.json`; see the pack's own `CHANGELOG.md`.
 
+## App 1.8.0 (2026-11-05)
+### Music
+- **Play music from the Media tab** — before the service, under a reflection, behind the
+  notices. Add `.mp3`, `.m4a`, `.wav` and the rest the same way you add pictures, then click one
+  to play it.
+- It **keeps playing** while you move through slides, take a reading live or black the screen,
+  and it **fades in and out** rather than cutting. By default it fades out when something goes on
+  the screen; if you want music under the service, turn that off in Settings.
+- A small transport appears under **Live** only while something is playing: pause, loop, how
+  loud, and stop.
+
+### Notes for the musicians and the preacher
+- Put a note on any line of the service — "Key of G · two verses only · pause for the
+  children". It shows on the **stage display** at the front and **never** on the audience
+  screen.
+
+### Drag files straight in
+- Drop pictures, music, a **PowerPoint** or a **PDF** anywhere on the window. Media goes into
+  your library; a deck is imported as a presentation. The memory stick with this week's notices
+  is now two seconds from the screen.
+
+### Also in this version
+- RG-Present is on the **Microsoft Store**. A Store copy is kept up to date by Windows, so it
+  never checks or installs anything itself — the Updates window says so. The version you
+  download from the web still updates itself exactly as before.
+
 ## App 1.7.0 (2026-11-03)
 ### Pictures fill the screen
 - A photograph is never the shape of a projector, and RG-Present was putting black bars round
