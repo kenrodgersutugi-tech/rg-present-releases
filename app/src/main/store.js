@@ -55,6 +55,11 @@ const DEFAULT_SETTINGS = {
   // to Google and nowhere else.
   geminiApiKey: '',
   geminiStyle: 'photo',
+  // Music played from the operator's computer: pre-service, under a reflection, behind the
+  // notices. It fades out when something goes live unless a church turns that off.
+  musicVolume: 0.7,
+  musicLoop: true,
+  musicStopOnLive: true,
   chorusWords: [],
   logoMedia: 'packs/rg-core/logo.svg',
   autoAdvanceSeconds: 8,

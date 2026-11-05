@@ -111,16 +111,28 @@
       card.className = 'media-card';
       card.draggable = true;
       const url = RGRender.mediaUrl(m.rel_path);
-      card.innerHTML = (m.type === 'video' ? `<video class="thumb" src="${url}" muted preload="metadata"></video>` : `<img class="thumb" src="${url}" loading="lazy">`) +
+      // Music has nothing to show, so its card is a card about music, not a broken picture.
+      const face = m.type === 'audio'
+        ? '<span class="thumb audio"><i data-icon="music"></i></span>'
+        : m.type === 'video'
+          ? `<video class="thumb" src="${url}" muted preload="metadata"></video>`
+          : `<img class="thumb" src="${url}" loading="lazy">`;
+      card.innerHTML = face +
         `<div class="cap">${App.esc(m.name)}</div>` +
-        `<button class="mini bg" title="Use as the background of the item in Preview"><i data-icon="image"></i></button>` +
+        (m.type === 'audio' ? '' : `<button class="mini bg" title="Use as the background of the item in Preview"><i data-icon="image"></i></button>`) +
         (m.rel_path.startsWith('user/') ? '<button class="mini del" title="Remove"><i data-icon="trash"></i></button>' : '');
       // Double-click shows it on the audience screen at once; drag it into the service to keep it.
-      card.addEventListener('dblclick', () => App.goLiveNow({ type: 'media', title: m.name, rel: m.rel_path, mediaType: m.type }));
-      card.querySelector('.bg').onclick = (e) => {
-        e.stopPropagation();
-        App.setItemBackground(m);
-      };
+      if (m.type === 'audio') {
+        // One tap plays it. It keeps playing while the operator carries on with the service.
+        card.addEventListener('click', () => RGMusic.play(m));
+        card.addEventListener('dblclick', () => RGMusic.play(m));
+      } else {
+        card.addEventListener('dblclick', () => App.goLiveNow({ type: 'media', title: m.name, rel: m.rel_path, mediaType: m.type }));
+        card.querySelector('.bg').onclick = (e) => {
+          e.stopPropagation();
+          App.setItemBackground(m);
+        };
+      }
       card.addEventListener('dragstart', (e) => e.dataTransfer.setData('application/x-rg-media', JSON.stringify(m)));
       const del = card.querySelector('.del');
       if (del) del.onclick = async (e) => {

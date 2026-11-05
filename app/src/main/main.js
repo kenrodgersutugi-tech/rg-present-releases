@@ -350,9 +350,12 @@ function registerIpc() {
   handle('media:list', () => db.listMedia());
   handle('media:import', async () => {
     const r = await dialog.showOpenDialog(win.operator, {
-      title: 'Add images or videos',
+      title: 'Add pictures, videos or music',
       properties: ['openFile', 'multiSelections'],
-      filters: [{ name: 'Images & videos', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg', 'mp4', 'webm', 'mov', 'm4v'] }],
+      filters: [
+        { name: 'Pictures, videos and music', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp', 'svg', 'mp4', 'webm', 'mov', 'm4v', 'mp3', 'm4a', 'aac', 'ogg', 'wav', 'flac'] },
+        { name: 'Music only', extensions: ['mp3', 'm4a', 'aac', 'ogg', 'wav', 'flac'] },
+      ],
     });
     if (r.canceled) return [];
     const added = [];
@@ -526,6 +529,51 @@ function registerIpc() {
     return r;
   });
   handle('web:audience', () => browser.audienceState());
+
+  /**
+   * Files dropped onto the window from Explorer. The same copying the Add button does, so a
+   * picture dropped in is as much the church's own as one chosen through the dialog, and a
+   * presentation dropped in is imported rather than merely pointed at.
+   */
+  // `files`, not `paths`: `paths` is this module's own store paths, and shadowing it here
+  // left the copy destination undefined.
+  handle('media:add-paths', async (files) => {
+    const added = [];
+    const decks = [];
+    const skipped = [];
+    const dir = path.join(paths.media, 'user');
+    fs.mkdirSync(dir, { recursive: true });
+
+    for (const file of (files || []).slice(0, 50)) {
+      const ext = path.extname(file).toLowerCase();
+      if (ext === '.pptx' || ext === '.ppt' || ext === '.pdf') {
+        try {
+          const deck = await presentations.importPresentation(file, (done, total) => {
+            tellOperator('decks:progress', { file: path.basename(file), done, total });
+          });
+          db.addDeck(deck);
+          decks.push(db.getDeck(deck.id));
+        } catch (e) {
+          skipped.push({ file: path.basename(file), message: String(e.message || e) });
+        }
+        continue;
+      }
+      const type = packs.mediaType(file);
+      if (!type) { skipped.push({ file: path.basename(file), message: 'RG-Present cannot show that kind of file.' }); continue; }
+      let dest = path.join(dir, path.basename(file));
+      for (let i = 2; fs.existsSync(dest); i++) dest = path.join(dir, `${path.parse(file).name} (${i})${path.extname(file)}`);
+      try {
+        fs.copyFileSync(file, dest);
+      } catch (e) {
+        skipped.push({ file: path.basename(file), message: 'That file could not be copied in.' });
+        continue;
+      }
+      const rel = `user/${path.basename(dest)}`;
+      db.addMedia({ name: path.parse(dest).name, rel_path: rel, type, folder: 'My Media' });
+      added.push({ name: path.parse(dest).name, rel_path: rel, type });
+    }
+    return { added, decks, skipped };
+  });
 
   handle('media:delete', (id) => {
     const m = db.deleteMedia(id);

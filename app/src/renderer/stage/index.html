@@ -14,12 +14,17 @@
     #current { min-height: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; padding: 2vh 4vw; text-align: center; white-space: pre-wrap; font-weight: 600; line-height: 1.2; }
     #next { border-top: 1px solid #222; padding: 1.6vh 4vw 2.4vh; color: #f3c969; font-size: 3.6vh; white-space: pre-wrap; line-height: 1.25; max-height: 26vh; overflow: hidden; }
     #next::before { content: "NEXT  "; color: #6c7488; font-size: 2.6vh; letter-spacing: .1em; font-weight: 700; }
+    /* The operator's note for the people at the front. Never shown to a congregation. */
+    #notes { border-top: 1px solid #222; padding: 1.4vh 4vw 2vh; color: #8fd3a1; font-size: 3vh;
+      white-space: pre-wrap; line-height: 1.3; max-height: 22vh; overflow: hidden; }
+    #notes::before { content: "NOTE  "; color: #6c7488; font-size: 2.4vh; letter-spacing: .1em; font-weight: 700; }
   </style>
 </head>
 <body>
   <header><span id="title">RG-Present</span><span id="state">—</span><span id="clock"></span></header>
   <div id="current"></div>
   <div id="next"></div>
+  <div id="notes" style="display:none"></div>
   <script src="../shared/richtext.js"></script>
   <script src="stage.js"></script>
 </body>

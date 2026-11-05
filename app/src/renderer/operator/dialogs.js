@@ -926,6 +926,7 @@
             <small>Only used to make background pictures from the theme of a service. Kept on this computer and sent to Google and nowhere else. Get a key at aistudio.google.com — everything else in RG-Present works without it.</small></label>
           <label class="field"><span>Look of generated pictures</span>
             <select data-k="geminiStyle">${[['photo', 'Photograph'], ['landscape', 'Landscape'], ['painted', 'Painted'], ['abstract', 'Abstract light and colour']].map(([k, l]) => `<option value="${k}" ${(s.geminiStyle || 'photo') === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+          <label class="field check"><input type="checkbox" data-k="musicStopOnLive" ${s.musicStopOnLive !== false ? 'checked' : ''}> Fade the music out when something goes on the screen</label>
           <label class="field full"><span>Font for every slide</span>
             <input data-k="slideFont" list="slideFontList" value="${esc(s.slideFont || '')}" placeholder="Leave empty to let each theme choose">
             <datalist id="slideFontList">${['Segoe UI', 'Segoe UI Semibold', 'Calibri', 'Cambria', 'Georgia', 'Arial', 'Verdana', 'Tahoma', 'Trebuchet MS', 'Bahnschrift', 'Candara', 'Constantia', 'Corbel', 'Palatino Linotype', 'Times New Roman', 'Book Antiqua'].map((x) => `<option value="${x}">`).join('')}</datalist>
@@ -986,6 +987,7 @@
         textScale: +v('textScale').value || 1,
         logoMedia: v('logoMedia').value || s.logoMedia,
         slideFont: v('slideFont').value.trim(),
+        musicStopOnLive: v('musicStopOnLive').checked,
         geminiApiKey: v('geminiApiKey').value.trim(),
         geminiStyle: v('geminiStyle').value,
         fontFallback: v('fontFallback').value.trim() || s.fontFallback,

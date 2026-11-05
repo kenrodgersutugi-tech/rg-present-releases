@@ -172,6 +172,9 @@
     // The operator's own name for this line of the service. It belongs on the operator's
     // screen only: the footer the congregation reads still carries the hymn's real title.
     if (item.label) r.label = item.label;
+    // What the musicians and the preacher need to know about this line of the service:
+    // the key, who leads it, "two verses only", "pause for the children".
+    if (item.notes) r.notes = item.notes;
     return r;
   };
 
@@ -188,6 +191,9 @@
       first: !!s.first,
       media: s.media ? { ...s.media, ...App.mediaPlayback } : null,
       item: { title: r.title, number: r.number, author: r.author, copyright: r.copyright, kind: r.kind, reference: s.reference, abbrev: r.abbrev },
+      // For the people at the front, never for the congregation: the stage display shows this
+      // and the audience window ignores it entirely.
+      notes: r.notes || '',
       theme: r.theme,
       logoUrl: App.settings.logoMedia,
       textScale: App.settings.textScale || 1,
@@ -402,6 +408,7 @@
   }
 
   App.goLive = async (item, index, slide) => {
+    musicStepsAside();
     // A "minutes from now" countdown restarts whenever it goes live.
     const target = item || (App.preview && App.preview.item);
     if (target && target.type === 'countdown' && target.mode !== 'clock') target._startedAt = new Date().toISOString();
@@ -437,6 +444,14 @@
     lastTap = same ? { key: null, at: 0 } : { key, at: now };
     return same;
   };
+
+  /**
+   * Something has gone to the screen, so the music that was covering the silence has done its
+   * job. A church that wants the music to carry on under the words turns this off in Settings.
+   */
+  function musicStepsAside() {
+    if (window.RGMusic) RGMusic.liveStarted();
+  }
 
   App.goLiveNow = async (item) => {
     await App.setPreview(item, null, 0);
@@ -760,6 +775,24 @@
     if (App.preview && App.preview.item === it) App.renderPreviewHeader && App.renderPreviewHeader();
   };
 
+  /**
+   * Notes for the people at the front. They appear on the stage display, which faces the band
+   * and the preacher, and nowhere near the audience screen.
+   */
+  App.editNotes = async (i) => {
+    const it = App.service.items[i];
+    if (!it) return;
+    const text = await App.prompt('Notes for the stage display',
+      'Seen by the musicians and the preacher, never by the congregation', it.notes || '');
+    if (text === null) return;
+    const clean = String(text).trim();
+    if (clean) it.notes = clean; else delete it.notes;
+    App.markDirty();
+    App.renderSchedule();
+    if (App.preview && App.preview.item === it) await App.setPreview(it, i, App.preview.slide);
+    if (App.live && App.live.item === it) await App.goLive(it, i, App.live.slide);
+  };
+
   App.removeItem = (i) => {
     App.service.items.splice(i, 1);
     if (App.preview && App.preview.index === i) App.preview.index = null;
@@ -858,12 +891,14 @@
       const under = it.label ? [it.title, sub].filter(Boolean).join(' · ') : sub;
       li.innerHTML = `<i class="grip" data-icon="grip"></i><span class="kind ${it.type}"><i data-icon="${itemIcon(it)}"></i></span>
         <span class="t"><b>${App.esc(shown)}</b><small>${App.esc(under)}</small></span>
+        <button class="mini note${it.notes ? ' has' : ''}" title="${it.notes ? 'Notes for the musicians: ' + App.esc(it.notes).slice(0, 60) : 'Notes for the musicians and the preacher (shown on the stage display only)'}"><i data-icon="text"></i></button>
         <button class="mini dup" title="Duplicate this line"><i data-icon="copy"></i></button>
         <button class="mini ren" title="Name this line of the service (F2)"><i data-icon="edit"></i></button>
         <button class="mini rm" title="Remove"><i data-icon="x"></i></button>`;
       li.addEventListener('click', (e) => {
         if (e.target.closest('.rm')) return App.removeItem(i);
         if (e.target.closest('.dup')) return App.duplicateItem(i);
+        if (e.target.closest('.note')) return App.editNotes(i);
         if (e.target.closest('.ren')) return App.renameItem(i);
         App.setPreview(it, i, 0);
       });
@@ -1097,6 +1132,69 @@
       : 'Audience output is off (click to turn on)';
   };
 
+  /** The music transport under Live: visible only while something is playing. */
+  function setupMusic() {
+    const bar = $('#musicBar');
+    const vol = $('#musicVol');
+    if (!bar || !window.RGMusic) return;
+    vol.value = Math.round((App.settings.musicVolume ?? 0.7) * 100);
+    vol.addEventListener('input', () => RGMusic.setVolume(vol.value / 100));
+    RGMusic.onChange((s) => {
+      bar.hidden = !s.playing && !s.paused;
+      $('#musicName').textContent = s.name;
+      $('#btnMusicPlay').innerHTML = s.paused ? '&#9654;' : '&#10074;&#10074;';
+      $('#btnMusicPlay').title = s.paused ? 'Play the music' : 'Pause the music';
+      $('#btnMusicLoop').classList.toggle('on', s.loop);
+      if (document.activeElement !== vol) vol.value = Math.round(s.volume * 100);
+    });
+  }
+
+  /**
+   * Files dragged in from Explorer.
+   *
+   * A church gets this week's notices on a memory stick, or a photograph over WhatsApp, and
+   * the shortest path from there to the screen should be dropping it on the window. Pictures,
+   * videos and music go into Media; a PowerPoint or a PDF is imported as a presentation.
+   */
+  function setupFileDrop() {
+    const stop = (e) => { e.preventDefault(); e.stopPropagation(); };
+    const isFiles = (e) => e.dataTransfer && [...(e.dataTransfer.types || [])].includes('Files');
+
+    window.addEventListener('dragover', (e) => {
+      if (!isFiles(e)) return;
+      stop(e);
+      e.dataTransfer.dropEffect = 'copy';
+      document.body.classList.add('file-drop');
+    });
+    window.addEventListener('dragleave', (e) => {
+      if (e.relatedTarget) return;
+      document.body.classList.remove('file-drop');
+    });
+    window.addEventListener('drop', async (e) => {
+      if (!isFiles(e)) return;
+      stop(e);
+      document.body.classList.remove('file-drop');
+      const paths = [...e.dataTransfer.files].map((f) => window.rgFilePath(f)).filter(Boolean);
+      if (!paths.length) return;
+
+      App.toast(paths.length === 1 ? 'Bringing that file in…' : `Bringing ${paths.length} files in…`);
+      try {
+        const r = await rg.invoke('media:add-paths', paths);
+        const bits = [];
+        if (r.added.length) bits.push(`${r.added.length} in Media`);
+        if (r.decks.length) bits.push(`${r.decks.length} ${r.decks.length === 1 ? 'presentation' : 'presentations'}`);
+        if (bits.length) App.toast(bits.join(' · '));
+        for (const s of r.skipped) App.toast(`${s.file}: ${s.message}`, true);
+        if (window.Library) {
+          if (r.added.length) Library.loadMedia();
+          if (r.decks.length) Library.loadDecks();
+        }
+      } catch (err) {
+        App.toast(App.errorText(err), true);
+      }
+    });
+  }
+
   App.initCore = () => {
     App.previewStage = RGRender.createStage($('#previewMonitor'), { noTransitions: true });
     App.liveStage = RGRender.createStage($('#liveMonitor'));
@@ -1105,6 +1203,8 @@
     setupScheduleDnD();
     setupKeys();
     setupSplitters();
+    setupMusic();
+    setupFileDrop();
     $('#textScale').textContent = `${Math.round((App.settings.textScale || 1) * 100)}%`;
     $('#autoSecs').value = App.settings.autoAdvanceSeconds || 8;
     $('#autoSecs').addEventListener('change', () => {

@@ -332,6 +332,27 @@ button { cursor: pointer; }
 .section-title { font: 600 12px var(--font); letter-spacing: .1em; text-transform: uppercase; color: var(--text-3); margin: 18px 0 8px; }
 .section-title:first-child { margin-top: 0; }
 
+/* Dragging files in from Explorer. */
+body.file-drop::after {
+  content: "Drop pictures, music, a PowerPoint or a PDF to bring them in";
+  position: fixed; inset: 10px; z-index: 90; display: grid; place-items: center;
+  border: 2px dashed var(--accent, #7aa2f7); border-radius: 14px;
+  background: rgba(10, 12, 18, .72); color: #fff; font-size: 15px; pointer-events: none;
+}
+
+/* A line of the service that carries a note for the people at the front. */
+.schedule li .mini.note.has { color: #8fd3a1; }
+
+/* The music transport, which only appears while something is playing. */
+.ctl-row.music { align-items: center; gap: 8px; }
+.ctl-row.music[hidden] { display: none; }
+.music-name {
+  flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-size: 12px; color: var(--muted, #9aa4b2);
+}
+.music-name::before { content: "\266A  "; color: var(--accent, #7aa2f7); }
+.music-vol { width: 86px; }
+
 /* Asking in words: one box, four questions, answers you can act on. */
 .ask { display: flex; flex-direction: column; gap: 10px; min-width: 560px; }
 .ask #askBox { width: 100%; height: 36px; font-size: 14px; }

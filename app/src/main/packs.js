@@ -67,6 +67,9 @@ function mediaType(file) {
   const ext = path.extname(file).toLowerCase();
   if (['.mp4', '.webm', '.mov', '.m4v', '.ogv'].includes(ext)) return 'video';
   if (['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.svg'].includes(ext)) return 'image';
+  // Music before a service, under a reflection, behind the notices. It is kept apart from
+  // video because it has nothing to show: it plays while the screen carries on as it was.
+  if (['.mp3', '.m4a', '.aac', '.ogg', '.oga', '.wav', '.flac'].includes(ext)) return 'audio';
   return null;
 }
 

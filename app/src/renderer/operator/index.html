@@ -103,6 +103,15 @@
           <option value="cut">Cut</option>
         </select>
       </div>
+      <!-- Only here while music is playing: it is not a control to hunt for, it is a thing
+           that appears when there is something to control. -->
+      <div class="ctl-row music" id="musicBar" hidden>
+        <span class="music-name" id="musicName"></span>
+        <button class="ctl" id="btnMusicPlay" data-action="music-play" title="Pause the music">&#10074;&#10074;</button>
+        <button class="ctl toggle" id="btnMusicLoop" data-action="music-loop" title="Play it again when it ends">Loop</button>
+        <input class="music-vol" id="musicVol" type="range" min="0" max="100" title="How loud the music is">
+        <button class="ctl" data-action="music-stop" title="Fade the music out and stop">Stop</button>
+      </div>
     </section>
 
     <div class="splitter h" data-split="library"></div>
@@ -177,6 +186,7 @@
   <script src="../shared/render.js"></script>
   <script src="icons.js"></script>
   <script src="app.js"></script>
+  <script src="music.js"></script>
   <script src="library.js"></script>
   <script src="scripture.js"></script>
   <script src="dialogs.js"></script>

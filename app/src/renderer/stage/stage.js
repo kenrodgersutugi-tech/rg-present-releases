@@ -42,5 +42,11 @@ window.rg.on('output:render', (p) => {
   $('current').textContent = p.mode === 'slide' ? plain(p.text) : '';
   $('next').textContent = plain(p.next);
   $('next').style.display = p.next ? '' : 'none';
+  // The operator's note for this line of the service, for the people at the front only.
+  const notes = $('notes');
+  if (notes) {
+    notes.textContent = p.notes || '';
+    notes.style.display = p.notes ? '' : 'none';
+  }
   fit();
 });

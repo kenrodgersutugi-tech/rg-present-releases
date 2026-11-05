@@ -1,12 +1,12 @@
 // Bridge between pages and the main process. Only the channels listed here are reachable.
-const { contextBridge, ipcRenderer } = require('electron');
+const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 const INVOKE = new Set([
   'app:info', 'app:changelog', 'app:open-data-folder', 'service:print',
   'settings:get', 'settings:set', 'displays:list', 'windows:state',
   'songs:search', 'songs:get', 'songs:linked', 'songs:save', 'songs:delete', 'songs:folders',
   'themes:list', 'themes:save', 'themes:delete',
-  'media:list', 'media:import', 'media:delete',
+  'media:list', 'media:import', 'media:delete', 'media:add-paths',
   'service:autosave', 'service:load-autosave', 'services:list', 'services:save', 'services:get', 'services:delete',
   'packs:list', 'packs:import', 'packs:export',
   'import:pick', 'import:parse', 'import:commit',
@@ -33,4 +33,19 @@ contextBridge.exposeInMainWorld('rg', {
   sendOutput(payload) {
     ipcRenderer.send('output:send', payload);
   },
+});
+
+/*
+ * Where a dropped file actually is on disk.
+ *
+ * Electron took File.path away from renderers, and a File object alone is useless to the main
+ * process — it cannot copy what it cannot find. webUtils.getPathForFile is the supported way
+ * to ask, and it lives here, in the preload, rather than giving the page any wider reach.
+ */
+contextBridge.exposeInMainWorld('rgFilePath', (file) => {
+  try {
+    return webUtils.getPathForFile(file);
+  } catch (_) {
+    return '';
+  }
 });
