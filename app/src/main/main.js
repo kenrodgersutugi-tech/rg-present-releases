@@ -19,6 +19,36 @@ const RENDERER = path.join(__dirname, '..', 'renderer');
 const ICON = path.join(__dirname, '..', '..', 'build', 'icon.png');
 const PUBLISHER = 'RG DEV Industries';
 const CONTACT_EMAIL = 'rgdev.ke@gmail.com';
+const WEBSITE = 'https://kenrodgersutugi-tech.github.io/rg-present-releases/';
+
+// The only addresses the app will ever hand to the operating system's browser.
+// The renderer asks for one by name, never by URL, so a page can never make
+// RG-Present open something of its own choosing.
+const LINKS = {
+  website: WEBSITE,
+  guide: `${WEBSITE}guide.html`,
+  download: `${WEBSITE}download.html`,
+  privacy: `${WEBSITE}privacy.html`,
+  terms: `${WEBSITE}terms.html`,
+};
+
+/**
+ * The setup guide, as a PDF inside the installation. A church with no internet
+ * on a Sunday morning is the whole reason it is bundled rather than linked.
+ * Returns null if this build did not include it, and the caller falls back to
+ * the copy on the website.
+ */
+function guidePdf() {
+  const candidates = [
+    path.join(process.resourcesPath || '', 'guide', 'RG-Present-Setup-Guide.pdf'),
+    // Running from a checkout: docs/ is two levels above app/src/main.
+    path.join(__dirname, '..', '..', '..', 'docs', 'RG-Present-Setup-Guide.pdf'),
+  ];
+  for (const file of candidates) {
+    try { if (file && fs.existsSync(file)) return file; } catch (_) { /* unreadable: try the next */ }
+  }
+  return null;
+}
 
 // rgmedia://media/<relative path under data/media> — lets pages load user media without file:// access.
 protocol.registerSchemesAsPrivileged([
@@ -276,7 +306,29 @@ function registerIpc() {
     packs: db.listPacks(),
     dataDir: paths.data,
     electron: process.versions.electron,
+    website: WEBSITE,
+    hasGuide: !!guidePdf(),
   }));
+
+  // Opens one of the addresses above in the operator's own browser, by name.
+  handle('app:open-link', (name) => {
+    const url = LINKS[name];
+    if (!url) return false;
+    shell.openExternal(url);
+    return true;
+  });
+
+  // The guide: the bundled PDF where there is one, the website where there is
+  // not, so pressing Help always ends with the guide in front of the operator.
+  handle('app:open-guide', async () => {
+    const file = guidePdf();
+    if (file) {
+      const failure = await shell.openPath(file);
+      if (!failure) return { opened: 'file', path: file };
+    }
+    shell.openExternal(LINKS.guide);
+    return { opened: 'web', url: LINKS.guide };
+  });
   handle('app:changelog', () => {
     let file = '';
     try { file = fs.readFileSync(paths.changelog, 'utf8'); } catch (_) { /* not bundled */ }

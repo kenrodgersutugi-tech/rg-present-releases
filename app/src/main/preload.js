@@ -2,7 +2,7 @@
 const { contextBridge, ipcRenderer, webUtils } = require('electron');
 
 const INVOKE = new Set([
-  'app:info', 'app:changelog', 'app:open-data-folder', 'service:print',
+  'app:info', 'app:changelog', 'app:open-data-folder', 'app:open-link', 'app:open-guide', 'service:print',
   'settings:get', 'settings:set', 'displays:list', 'windows:state',
   'songs:search', 'songs:get', 'songs:linked', 'songs:save', 'songs:delete', 'songs:folders',
   'themes:list', 'themes:save', 'themes:delete',

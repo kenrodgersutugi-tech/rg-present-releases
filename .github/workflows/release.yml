@@ -44,6 +44,9 @@ jobs:
       - name: Build content packs
         run: npm run build-packs
 
+      - name: Bundle the setup guide
+        run: npm run bundle-guide
+
       - name: Build icons
         run: npx electron tools/make-icons.js
 

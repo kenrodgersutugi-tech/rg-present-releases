@@ -5,6 +5,21 @@ App, database schema and content packs are versioned separately:
 - **Schema version**: `MIGRATIONS` in `src/main/db.js` (the library is backed up before every upgrade).
 - **Content pack versions**: each pack's `manifest.json`; see the pack's own `CHANGELOG.md`.
 
+## App 1.8.1 (2026-11-06)
+### The guide is in the program now
+- **Press F1, or the book button beside Settings, and the setup guide opens** — installing it,
+  connecting the projector, building a service, running it on Sunday, and what to do when
+  something goes wrong on the morning.
+- The guide travels **inside the installation as a PDF**, so it opens in a hall with no signal.
+  Where a build has not got it, the copy on the website is opened instead.
+- **Settings now carries the website**, the setup guide, the privacy policy and the terms, so a
+  volunteer at the laptop can find all of it without being told an address. Only those five
+  addresses can ever be opened: a page cannot make RG-Present open one of its own.
+
+### Smaller
+- The toolbar **fits a 1280x720 screen** again. Its labels now give way to the icons just below
+  1366 wide rather than just below 1250, which is where they started to run off the end.
+
 ## App 1.8.0 (2026-11-05)
 ### Music
 - **Play music from the Media tab** — before the service, under a reflection, behind the

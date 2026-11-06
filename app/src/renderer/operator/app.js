@@ -37,6 +37,20 @@
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => t.classList.remove('show'), isError ? 5000 : 2400);
   };
+  /**
+   * The setup guide: the PDF inside the installation where there is one, the
+   * copy on the website where there is not. Either way it opens outside
+   * RG-Present, so nothing of the service is disturbed by reading it.
+   */
+  App.openGuide = async () => {
+    try {
+      const where = await rg.invoke('app:open-guide');
+      App.toast(where && where.opened === 'web' ? 'Opening the setup guide on the website' : 'Opening the setup guide');
+    } catch (e) {
+      App.toast(App.errorText(e), true);
+    }
+  };
+
   App.uid = () => Math.random().toString(36).slice(2, 10);
   App.esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   App.langLabel = (code) => ({ en: 'EN', mer: 'KIM', sw: 'SW' }[code] || (code || '?').toUpperCase().slice(0, 3));
@@ -1015,6 +1029,7 @@
         return App.renameItem(App.preview.index);
       }
       // The web browser, on its own window and never on the projector.
+      if (e.key === 'F1') { e.preventDefault(); return App.openGuide(); }
       if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'w') { e.preventDefault(); return rg.invoke('web:open'); }
       if (e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'a') { e.preventDefault(); return Dialogs.ask(); }
       // Text size works even while typing in the library search, so it is always to hand.

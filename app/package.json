@@ -1,8 +1,8 @@
 {
   "name": "rg-present",
   "productName": "RG-Present",
-  "version": "1.8.0",
-  "description": "Worship presentation software for Windows \u2014 hymns, Bibles, themes and dual-screen output.",
+  "version": "1.8.1",
+  "description": "Worship presentation software for Windows — hymns, Bibles, themes and dual-screen output.",
   "main": "src/main/main.js",
   "author": {
     "name": "RG DEV Industries",
@@ -13,7 +13,8 @@
   "scripts": {
     "start": "electron .",
     "build-packs": "node tools/build-packs.js",
-    "dist": "npm run build-packs && electron-builder --win",
+    "bundle-guide": "node tools/bundle-guide.js",
+    "dist": "npm run build-packs && npm run bundle-guide && electron-builder --win",
     "parse-hymnal": "node tools/parse-wesleyan-ocr.js",
     "make-icons": "electron tools/make-icons.js",
     "parse-hymns": "node tools/parse-wesleyan-ocr.js && node tools/parse-gutenberg-hymnal.js content-src/otterbein-hymnal/source/pg16455.txt content-src/otterbein-hymnal/songs.json && node tools/parse-gutenberg-hymnal.js content-src/christian-hymn-book/source/pg46041.txt content-src/christian-hymn-book/songs.json",
@@ -34,6 +35,10 @@
       {
         "from": "content",
         "to": "content"
+      },
+      {
+        "from": "build/guide",
+        "to": "guide"
       }
     ],
     "win": {
@@ -63,7 +68,7 @@
     "directories": {
       "output": "dist"
     },
-    "copyright": "Copyright \u00a9 RG DEV Industries",
+    "copyright": "Copyright © RG DEV Industries",
     "appx": {
       "applicationId": "RGPresent",
       "identityName": "RgDevs.RGPresent",

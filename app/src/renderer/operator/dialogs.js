@@ -940,7 +940,9 @@
         <div class="about-card">
           <div class="about-mark"><i data-icon="package"></i></div>
           <div><b>Created by ${esc(info.publisher || 'RG DEV Industries')}</b>
-          <div class="muted">Support and feedback: <a href="#" data-mail>${esc(info.contactEmail || '')}</a></div></div>
+          <div class="muted">Support and feedback: <a href="#" data-mail>${esc(info.contactEmail || '')}</a></div>
+          <div class="muted">Website: <a href="#" data-link="website">${esc((info.website || '').replace(/^https:\/\//, '').replace(/\/$/, ''))}</a></div>
+          <div class="muted"><a href="#" data-guide>Setup guide</a>${info.hasGuide ? ' (on this computer, no internet needed)' : ''} &middot; <a href="#" data-link="privacy">privacy</a> &middot; <a href="#" data-link="terms">terms</a></div></div>
         </div>
         <div class="section-title">Content packs</div>
         ${info.packs.map((p) => `<div class="pack-row"><i data-icon="package"></i><b>${esc(p.name)}</b><span class="muted">v${esc(p.version)}</span></div>`).join('')}
@@ -962,6 +964,11 @@
       e.preventDefault();
       navigator.clipboard.writeText(info.contactEmail || '').then(() => App.toast('Email address copied'), () => {});
     };
+    d.qa('[data-link]').forEach((a) => (a.onclick = (e) => {
+      e.preventDefault();
+      rg.invoke('app:open-link', a.dataset.link);
+    }));
+    d.q('[data-guide]').onclick = (e) => { e.preventDefault(); App.openGuide(); };
     d.q('[data-cancel]').onclick = () => d.close();
     d.q('[data-pack-import]').onclick = () => { d.close(); Dialogs.installPack(); };
     d.q('[data-bible-import]').onclick = () => { d.close(); Dialogs.importBible(); };

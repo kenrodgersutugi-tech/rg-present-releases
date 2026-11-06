@@ -45,6 +45,9 @@ jobs:
       - name: Build the content packs
         run: npm run build-packs
 
+      - name: Bundle the setup guide
+        run: npm run bundle-guide
+
       - name: Check the identity before spending a build on it
         shell: pwsh
         run: |

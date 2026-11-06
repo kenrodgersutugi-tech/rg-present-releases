@@ -95,7 +95,10 @@ button { cursor: pointer; }
 .service-name:hover { background: var(--raise); }
 .service-name .dirty { color: var(--gold); margin-left: 4px; }
 
-@media (max-width: 1250px) {
+/* Below this the labels go and the icons speak for themselves. The number is
+   just above 1280x720 on purpose: that screen is still in use, and with the
+   labels on, the toolbar ran off the end of it. */
+@media (max-width: 1320px) {
   .titlebar { gap: 8px; padding-right: 140px; }
   .tb .lbl { display: none; }
   .tb { padding: 0 8px; }

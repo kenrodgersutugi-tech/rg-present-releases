@@ -29,6 +29,7 @@
     'deck-import': () => Dialogs.importPresentation(),
     themes: () => Dialogs.themes(),
     settings: () => Dialogs.settings(),
+    help: () => App.openGuide(),
     'toggle-output': async () => { App.settings = await rg.invoke('settings:set', { outputEnabled: !$('#btnOutput').classList.contains('on') }); },
     'toggle-stage': async () => { App.settings = await rg.invoke('settings:set', { stageEnabled: !$('#btnStage').classList.contains('on') }); },
     'ui-theme': async () => {
