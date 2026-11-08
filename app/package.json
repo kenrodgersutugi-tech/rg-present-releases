@@ -74,6 +74,8 @@
       "identityName": "RgDevs.RGPresent",
       "publisher": "CN=25EB1C95-8AD6-410C-8573-109DE5DB2BCF",
       "publisherDisplayName": "Rg Devs",
+      "minVersion": "10.0.17763.0",
+      "maxVersionTested": "10.0.22621.0",
       "displayName": "RG-Present",
       "backgroundColor": "#12141a",
       "languages": [

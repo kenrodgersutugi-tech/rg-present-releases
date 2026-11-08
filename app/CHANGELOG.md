@@ -6,6 +6,9 @@ App, database schema and content packs are versioned separately:
 - **Content pack versions**: each pack's `manifest.json`; see the pack's own `CHANGELOG.md`.
 
 ## App 1.8.2 (2026-11-08)
+- **Store package only:** it now declares Windows 10 version 1809 (10.0.17763.0) as its minimum,
+  which is what the Microsoft Store requires and what the copy already in the Store declares.
+  The installer from the website is unchanged by this, and still runs on any 64-bit Windows 10 or 11.
 - The button that opens the setup guide now wears a **question mark in a circle**. As a book
   outline at the size the title bar draws it, it read as an empty box, and the one button nobody
   should have to puzzle over is the one marked help.

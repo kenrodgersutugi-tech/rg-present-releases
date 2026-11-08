@@ -57,6 +57,10 @@ jobs:
           Write-Host "publisherDisplayName: $($appx.publisherDisplayName)"
           if ($appx.identityName -ne 'RgDevs.RGPresent') { throw 'identityName does not match Partner Center.' }
           if ($appx.publisher -ne 'CN=25EB1C95-8AD6-410C-8573-109DE5DB2BCF') { throw 'publisher does not match Partner Center.' }
+          Write-Host "minVersion          : $($appx.minVersion)"
+          if (-not $appx.minVersion -or [version]$appx.minVersion -le [version]'10.0.17134.0') {
+            throw 'build.appx.minVersion must be above 10.0.17134.0 or Partner Center refuses the upload.'
+          }
           $tiles = Get-ChildItem build/appx -Filter *.png
           Write-Host "tiles               : $($tiles.Count)"
           if ($tiles.Count -lt 10) { throw 'The Store tiles were not drawn.' }
@@ -85,6 +89,15 @@ jobs:
             Write-Host "PublisherDisplayName: $($xml.Package.Properties.PublisherDisplayName)"
             if ($identity.Name -ne 'RgDevs.RGPresent') { throw "The package identity is $($identity.Name), not RgDevs.RGPresent." }
             if (-not $identity.Version.EndsWith('.0')) { throw "The Store needs the fourth part of the version to be 0; it is $($identity.Version)." }
+
+            # Partner Center refuses a package whose MinVersion is 10.0.17134.0
+            # or lower, and it refuses it at upload, after the whole build has
+            # been spent. Catch it here instead.
+            $family = $xml.Package.Dependencies.TargetDeviceFamily
+            Write-Host "TargetDeviceFamily  : $($family.Name) min $($family.MinVersion), tested to $($family.MaxVersionTested)"
+            if ([version]$family.MinVersion -le [version]'10.0.17134.0') {
+              throw "MinVersion is $($family.MinVersion); the Store will not take anything at or below 10.0.17134.0. Set build.appx.minVersion in package.json."
+            }
             # The app must not try to update itself from a Store copy.
             $src = $zip.Entries | Where-Object { $_.FullName -like '*app/src/main/updater.js' }
             if (-not $src) { Write-Host 'updater.js is inside the asar, as expected.' }
