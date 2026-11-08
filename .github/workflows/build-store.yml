@@ -1,8 +1,11 @@
 # Builds the Microsoft Store package (MSIX) for the app in app/.
 #
-# It publishes nothing: the package comes out as an artifact on the run's summary page and a
-# person uploads it to Partner Center. Nothing here needs a token or a certificate — the Store
-# signs the package itself.
+# The package comes out as an artifact on the run's summary page, and is also attached to the
+# GitHub release of the same version when there is one, so it can be fetched with a plain link
+# rather than a 364 MB zip. A person still uploads it to Partner Center: nothing here needs a
+# certificate, because the Store signs the package itself. That is also why the attached copy is
+# named "-store-unsigned": Windows will not install it by double-clicking, and the name should
+# say so before somebody downloads 174 MB to find out.
 #
 # The identity below is the one Partner Center issued for RG-Present and must match it to the
 # character, or the upload is rejected:
@@ -18,7 +21,8 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  # Only to attach the finished package to its release.
+  contents: write
 
 defaults:
   run:
@@ -102,6 +106,28 @@ jobs:
             $src = $zip.Entries | Where-Object { $_.FullName -like '*app/src/main/updater.js' }
             if (-not $src) { Write-Host 'updater.js is inside the asar, as expected.' }
           } finally { $zip.Dispose() }
+
+      - name: Attach it to the release of the same version
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          $tag = "v$version"
+          $built = "dist/RG-Present-$version.msix"
+          if (-not (Test-Path $built)) { throw "No package at $built." }
+
+          gh release view $tag --repo $env:GITHUB_REPOSITORY *> $null
+          if ($LASTEXITCODE -ne 0) {
+            Write-Host "There is no $tag release yet, so there is nothing to attach the package to."
+            exit 0
+          }
+
+          # The name says what it is: the Store signs this, Windows will not install it as it is.
+          $named = "dist/RG-Present-$version-store-unsigned.msix"
+          Copy-Item $built $named -Force
+          gh release upload $tag $named --clobber --repo $env:GITHUB_REPOSITORY
+          Write-Host "Attached $named to $tag."
 
       - uses: actions/upload-artifact@v4
         with:
