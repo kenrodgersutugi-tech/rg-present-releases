@@ -29,6 +29,9 @@
     globe: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18z"/>',
     package: '<path d="m12 3 8 4.5v9L12 21l-8-4.5v-9z"/><path d="M12 12 20 7.5"/><path d="M12 12v9"/><path d="M12 12 4 7.5"/>',
     check: '<path d="m5 12 5 5 9-10"/>',
+    // A circled question mark: at 16px in the title bar the book outline read as
+    // a plain box, and the one button nobody should have to puzzle over is help.
+    help: '<circle cx="12" cy="12" r="9"/><path d="M9.3 9.3a2.8 2.8 0 1 1 3.5 2.7c-.8.2-1.2.8-1.2 1.6v.4"/><path d="M11.6 17.3h.01"/>',
   };
   function svg(name) {
     const p = P[name];
