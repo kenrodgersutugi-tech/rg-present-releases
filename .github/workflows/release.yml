@@ -48,6 +48,7 @@ jobs:
         run: npm run bundle-guide
 
       - name: Build icons
+        timeout-minutes: 6
         run: npx electron tools/make-icons.js
 
       - name: Build installer

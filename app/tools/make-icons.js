@@ -47,6 +47,30 @@ const APPX_TILES = [
   { name: 'SplashScreen.scale-200', w: 1240, h: 600 },
 ];
 
+/**
+ * Electron's offscreen capture occasionally never returns on a CI runner with no GPU — twice it
+ * has hung a Store build until the job's 45-minute timeout killed it. Nothing here is worth
+ * waiting minutes for, so every capture is raced against a clock and retried once on a fresh
+ * window; a second failure stops the build in seconds instead of three quarters of an hour.
+ */
+function withTimeout(promise, ms, what) {
+  let timer;
+  return Promise.race([
+    promise,
+    new Promise((_, reject) => { timer = setTimeout(() => reject(new Error(`${what} did not finish within ${ms} ms`)), ms); }),
+  ]).finally(() => clearTimeout(timer));
+}
+
+async function capture(what, run) {
+  try {
+    return await withTimeout(run(), 20000, what);
+  } catch (e) {
+    console.warn(`${what}: ${e.message} — retrying on a new window`);
+    if (win) { try { win.destroy(); } catch (_) { /* already gone */ } win = null; }
+    return withTimeout(run(), 20000, `${what} (retry)`);
+  }
+}
+
 /** One tile: the mark centred on a transparent canvas of the tile's own shape. */
 async function tile(svg, w, h) {
   if (!win) {
@@ -120,16 +144,29 @@ app.disableHardwareAcceleration();
 app.whenReady().then(async () => {
   const svg = fs.readFileSync(path.join(BUILD, 'icon.svg'), 'utf8');
   const entries = [];
-  for (const size of SIZES) entries.push({ size, png: await shot(svg, size) });
+  for (const size of SIZES) entries.push({ size, png: await capture(`icon ${size}px`, () => shot(svg, size)) });
   fs.writeFileSync(path.join(BUILD, 'icon.ico'), buildIco(entries));
-  fs.writeFileSync(path.join(BUILD, 'icon.png'), await shot(svg, 512));
+  fs.writeFileSync(path.join(BUILD, 'icon.png'), await capture('icon 512px', () => shot(svg, 512)));
   console.log(`build/icon.ico (${SIZES.join(', ')}px) and build/icon.png written`);
 
+  // The tiles are committed brand assets, not build output: the repository keeps them so a Store
+  // build can never quietly ship somebody else's logo. Redrawing fourteen of them on every run is
+  // fourteen more chances to hang for no gain, so an existing tile is left alone. Pass
+  // RG_REDRAW_TILES=1 after changing icon.svg, and commit what it draws.
   const appx = path.join(BUILD, 'appx');
   fs.mkdirSync(appx, { recursive: true });
+  const redraw = process.env.RG_REDRAW_TILES === '1';
+  let drawn = 0;
+  let kept = 0;
   for (const t of APPX_TILES) {
-    fs.writeFileSync(path.join(appx, `${t.name}.png`), await tile(svg, t.w, t.h));
+    const file = path.join(appx, `${t.name}.png`);
+    if (!redraw && fs.existsSync(file) && fs.statSync(file).size > 0) { kept++; continue; }
+    fs.writeFileSync(file, await capture(`tile ${t.name}`, () => tile(svg, t.w, t.h)));
+    drawn++;
   }
-  console.log(`build/appx: ${APPX_TILES.length} tiles written`);
+  console.log(`build/appx: ${drawn} tiles drawn, ${kept} already in the repository${redraw ? '' : ' (RG_REDRAW_TILES=1 redraws them)'}`);
   app.exit(0);
+}).catch((e) => {
+  console.error(`make-icons failed: ${e && e.message ? e.message : e}`);
+  app.exit(1);
 });

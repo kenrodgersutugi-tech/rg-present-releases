@@ -47,6 +47,7 @@ jobs:
         run: npm ci
 
       - name: Draw the icons and the Store tiles
+        timeout-minutes: 6
         run: npx electron tools/make-icons.js
 
       - name: Build the content packs
