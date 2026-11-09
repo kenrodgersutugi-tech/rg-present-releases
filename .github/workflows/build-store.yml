@@ -12,6 +12,9 @@
 #   Package/Identity/Name            RgDevs.RGPresent
 #   Package/Identity/Publisher       CN=25EB1C95-8AD6-410C-8573-109DE5DB2BCF
 #   Package/Properties/PublisherDisplayName  Rg Devs
+#   Package/Properties/DisplayName   RG Present   <- the reserved name, no hyphen. The product is
+#                                    written RG-Present everywhere else; the Store will only take a
+#                                    name reserved in Partner Center, and that is the one reserved.
 #   Store ID                         9NQ687HLV0B2
 #
 # Actions -> Build Store package -> Run workflow.
@@ -61,6 +64,10 @@ jobs:
           Write-Host "publisherDisplayName: $($appx.publisherDisplayName)"
           if ($appx.identityName -ne 'RgDevs.RGPresent') { throw 'identityName does not match Partner Center.' }
           if ($appx.publisher -ne 'CN=25EB1C95-8AD6-410C-8573-109DE5DB2BCF') { throw 'publisher does not match Partner Center.' }
+          Write-Host "displayName         : $($appx.displayName)"
+          if ($appx.displayName -ne 'RG Present') {
+            throw "displayName is '$($appx.displayName)'. The Store only accepts a name reserved in Partner Center, and the reserved one is 'RG Present' — not the hyphenated product name."
+          }
           Write-Host "minVersion          : $($appx.minVersion)"
           if (-not $appx.minVersion -or [version]$appx.minVersion -le [version]'10.0.17134.0') {
             throw 'build.appx.minVersion must be above 10.0.17134.0 or Partner Center refuses the upload.'
@@ -91,6 +98,10 @@ jobs:
             Write-Host "Identity/Publisher: $($identity.Publisher)"
             Write-Host "Identity/Version: $($identity.Version)"
             Write-Host "PublisherDisplayName: $($xml.Package.Properties.PublisherDisplayName)"
+            Write-Host "Properties/DisplayName: $($xml.Package.Properties.DisplayName)"
+            if ($xml.Package.Properties.DisplayName -ne 'RG Present') {
+              throw "Properties/DisplayName is '$($xml.Package.Properties.DisplayName)'; Partner Center rejects any name not reserved there."
+            }
             if ($identity.Name -ne 'RgDevs.RGPresent') { throw "The package identity is $($identity.Name), not RgDevs.RGPresent." }
             if (-not $identity.Version.EndsWith('.0')) { throw "The Store needs the fourth part of the version to be 0; it is $($identity.Version)." }
 

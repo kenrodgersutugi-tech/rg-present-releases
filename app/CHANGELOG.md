@@ -6,6 +6,10 @@ App, database schema and content packs are versioned separately:
 - **Content pack versions**: each pack's `manifest.json`; see the pack's own `CHANGELOG.md`.
 
 ## App 1.8.2 (2026-11-08)
+- **Store package only:** its display name is now **RG Present**, the name reserved in Partner
+  Center. The Store will not take a package whose name is not reserved there, and the hyphenated
+  RG-Present is not. Everywhere else — the installer, the window, this changelog — the product is
+  written RG-Present as it always has been.
 - **Store package only:** it now declares Windows 10 version 1809 (10.0.17763.0) as its minimum,
   which is what the Microsoft Store requires and what the copy already in the Store declares.
   The installer from the website is unchanged by this, and still runs on any 64-bit Windows 10 or 11.
