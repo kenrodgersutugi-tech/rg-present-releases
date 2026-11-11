@@ -944,6 +944,9 @@
           <div class="muted">Website: <a href="#" data-link="website">${esc((info.website || '').replace(/^https:\/\//, '').replace(/\/$/, ''))}</a></div>
           <div class="muted"><a href="#" data-guide>Setup guide</a>${info.hasGuide ? ' (on this computer, no internet needed)' : ''} &middot; <a href="#" data-link="privacy">privacy</a> &middot; <a href="#" data-link="terms">terms</a></div></div>
         </div>
+        <div class="section-title">Licence</div>
+        <div class="pack-row"><i data-icon="check"></i><b id="setLicence">Checking…</b><button class="btn small" data-licence>Licence…</button></div>
+
         <div class="section-title">Content packs</div>
         ${info.packs.map((p) => `<div class="pack-row"><i data-icon="package"></i><b>${esc(p.name)}</b><span class="muted">v${esc(p.version)}</span></div>`).join('')}
         <div style="display:flex;gap:8px;margin-top:10px"><button class="btn small" data-pack-import><i data-icon="package"></i>Install / update pack…</button><button class="btn small" data-pack-export>Export songs as pack…</button></div>
@@ -973,6 +976,21 @@
     d.q('[data-pack-import]').onclick = () => { d.close(); Dialogs.installPack(); };
     d.q('[data-bible-import]').onclick = () => { d.close(); Dialogs.importBible(); };
     d.q('[data-updates]').onclick = () => { d.close(); Dialogs.updates({ checkNow: true }); };
+    d.q('[data-licence]').onclick = () => { d.close(); Dialogs.licence(); };
+    rg.invoke('licence:status').then((l) => {
+      const words = {
+        valid: `Licensed${l.business ? ` to ${l.business}` : ''}`,
+        renewal_due: `Licensed — ${l.daysLeft} day${l.daysLeft === 1 ? '' : 's'} left`,
+        trial: `Free trial — ${l.daysLeft} day${l.daysLeft === 1 ? '' : 's'} left`,
+        grace: 'Free on this computer for now',
+        expired: 'The licence has run out',
+        trial_ended: 'The free trial has ended',
+        checking: 'Checking this computer…',
+        unlicensed: 'No licence yet',
+      };
+      const el = d.q('#setLicence');
+      if (el) el.textContent = words[l.state] || 'No licence yet';
+    }).catch(() => {});
     d.qa('[data-rm-bible]').forEach((b) => (b.onclick = async () => {
       if (!confirm('Remove this Bible translation?')) return;
       await rg.invoke('bible:remove', b.dataset.rmBible);
@@ -1164,6 +1182,192 @@
 
   // ---------- updates ----------
   const bytes = (n) => (n >= 1048576 ? `${(n / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
+
+  // ---------- licence ----------
+  /**
+   * The licence box: what this copy is entitled to, a key to type in, the free trial, and buying a
+   * plan with M-Pesa without leaving the program.
+   *
+   * It is a dialog like any other, which means it never opens by itself while something is on the
+   * audience screen — the operator opens it, or going live asks for it.
+   */
+  Dialogs.licence = async (opts = {}) => {
+    const st = await rg.invoke('licence:status').catch(() => ({ state: 'checking' }));
+    const money = (n) => `KES ${Number(n || 0).toLocaleString('en-KE')}`;
+    const day = (iso) => (iso ? new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' }) : '');
+
+    const headline = () => {
+      const l = Dialogs._licence || st;
+      switch (l.state) {
+        case 'valid': return [`Licensed to ${esc(l.business || 'this church')}`, `Paid up to ${day(l.paidUntil) || day(l.expiresAt)}.`];
+        case 'renewal_due': return [`Licensed to ${esc(l.business || 'this church')}`, `Runs out in ${l.daysLeft} day${l.daysLeft === 1 ? '' : 's'} — ${day(l.paidUntil) || day(l.expiresAt)}.`];
+        case 'trial': return ['Free trial', `${l.daysLeft} day${l.daysLeft === 1 ? '' : 's'} left. Choose a plan below whenever you are ready.`];
+        case 'grace': return ['Free on this computer for now', `You were using RG-Present before it needed a licence, so it keeps working here until ${day(l.graceUntil)}.`];
+        case 'trial_ended': return ['The free trial has ended', 'Choose a plan below, or type in a key. Everything you have made is still here.'];
+        case 'expired': return ['The licence has run out', 'Renew below. Your songs, services and settings are untouched.'];
+        case 'checking': return ['Checking this computer', 'Windows has not finished telling RG-Present which computer this is. Give it a minute.'];
+        default:
+          return l.reason === 'other_machine'
+            ? ['This licence belongs to another computer', 'Each licence covers one computer. Buy a plan for this one, or ask RG Devs to move it.']
+            : l.reason === 'wrong_product'
+              ? ['That key is for another RG Devs product', 'RG-Present keys begin RGPRS. Type in an RG-Present key, or buy a plan below.']
+              : ['No licence yet', 'Start the free trial, type in a key, or buy a plan with M-Pesa.'];
+      }
+    };
+
+    const [title, sub] = headline();
+    const blocked = opts.blocked === true;
+    const d = modal({
+      title: 'Licence',
+      body: `<div class="licence-grid">
+        ${blocked ? '<div class="notice warn"><b>Nothing can go on the audience screen yet.</b> Everything else — the library, editing, saving and printing — keeps working.</div>' : ''}
+        <div class="licence-state"><b id="lcTitle">${title}</b></div>
+        <div class="muted" id="lcSub">${sub}</div>
+        <div id="lcBody"></div>
+        <div class="muted machine-code">This computer: <span id="lcMachine">${esc(st.machineCode || 'not read yet')}</span></div>
+      </div>`,
+      footer: `<div class="left"><button class="btn" data-recheck>Check again</button></div><button class="btn" data-close-btn>Close</button>`,
+    });
+
+    const body = d.q('#lcBody');
+    let plans = [];
+    let chosen = null;
+    let polling = null;
+
+    const setState = (l) => {
+      Dialogs._licence = l;
+      App.licence = l;
+      App.showLicenceBar();
+      const [t, sb] = headline();
+      d.q('#lcTitle').textContent = t;
+      d.q('#lcSub').innerHTML = sb;
+      d.q('#lcMachine').textContent = l.machineCode || 'not read yet';
+    };
+
+    const keyAndTrial = () => `
+      <div class="form-grid">
+        <label class="field full"><span>Licence key</span>
+          <input id="lcKey" placeholder="RGPRS-XXXXX-XXXXX-XXXXX-XXXXX" autocomplete="off" spellcheck="false" style="text-transform:uppercase">
+          <small>RG Devs sends this when you buy outside the app.</small></label>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">
+        <button class="btn primary" data-activate>Use this key</button>
+        ${st.state === 'unlicensed' && !st.business ? '<button class="btn" data-trial>Start the free trial</button>' : ''}
+      </div>`;
+
+    // The Store copy may not take payment inside the app (Store policy 10.8.1), so it asks for a
+    // key instead and says plainly where to get one.
+    const storeWords = () => `
+      <div class="section-title">Buying a licence</div>
+      <p class="muted">This copy came from the Microsoft Store, which does not allow paying inside the app.
+      Pay to RG Devs on M-Pesa <b>Buy Goods till 1580813</b>, then send the M-Pesa message to
+      <b>rgdev.ke@gmail.com</b> with your church's name and the computer code below.
+      A licence key comes back by email; type it in above.</p>
+      <div class="licence-grid">${plans.map((p) => `
+        <div class="plan-row"><i data-icon="check"></i><span>${esc(p.label)}</span><span class="amount">${money(p.amountKes)}</span></div>`).join('')}</div>`;
+
+    const planList = () => `
+      <div class="section-title">Buy with M-Pesa</div>
+      <div class="licence-grid" id="lcPlans">${plans.map((p) => `
+        <div class="plan-row" data-plan="${esc(p.code)}">
+          <i data-icon="check"></i><span>${esc(p.label)}</span><span class="amount">${money(p.amountKes)}</span>
+        </div>`).join('') || '<p class="muted">Plans could not be fetched. Check the internet and press “Check again”.</p>'}</div>
+      <div class="form-grid" style="margin-top:10px">
+        <label class="field"><span>M-Pesa number</span><input id="lcPhone" inputmode="tel" placeholder="07XX XXX XXX"></label>
+        <label class="field"><span>Church name</span><input id="lcChurch" placeholder="St Paul's, Meru"></label>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;margin-top:8px">
+        <button class="btn primary" data-pay disabled>Pay with M-Pesa</button>
+        <span class="muted" id="lcPayNote"></span>
+      </div>`;
+
+    const draw = () => {
+      const storeCopy = st.storeBuild === true;
+      body.innerHTML = `${keyAndTrial()}${storeCopy ? storeWords() : plans.length || st.state !== 'checking' ? planList() : ''}`;
+      RGIcons.hydrate(body);
+
+      d.qa('[data-plan]').forEach((row) => (row.onclick = () => {
+        chosen = row.dataset.plan;
+        d.qa('[data-plan]').forEach((r) => r.classList.toggle('on', r === row));
+        d.q('[data-pay]').disabled = false;
+      }));
+
+      const kb = d.q('[data-activate]');
+      if (kb) kb.onclick = async () => {
+        const key = (d.q('#lcKey').value || '').trim().toUpperCase();
+        if (!key) return App.toast('Type the licence key first', true);
+        kb.disabled = true;
+        try {
+          setState(await rg.invoke('licence:activate', key));
+          App.toast('Licence activated');
+          draw();
+        } catch (e) {
+          App.toast(App.errorText(e), true);
+        } finally {
+          kb.disabled = false;
+        }
+      };
+
+      const tb = d.q('[data-trial]');
+      if (tb) tb.onclick = async () => {
+        tb.disabled = true;
+        try {
+          setState(await rg.invoke('licence:trial'));
+          App.toast('Free trial started');
+          draw();
+        } catch (e) {
+          App.toast(App.errorText(e), true);
+        } finally {
+          tb.disabled = false;
+        }
+      };
+
+      const pay = d.q('[data-pay]');
+      if (pay) pay.onclick = async () => {
+        const phone = (d.q('#lcPhone').value || '').trim();
+        const churchName = (d.q('#lcChurch').value || '').trim();
+        if (!chosen) return App.toast('Choose a plan first', true);
+        if (!phone) return App.toast('Type the M-Pesa number', true);
+        pay.disabled = true;
+        const note = d.q('#lcPayNote');
+        note.textContent = 'Sending the request…';
+        try {
+          const order = await rg.invoke('licence:buy', { priceCode: chosen, phone, churchName });
+          note.textContent = `Check ${phone}: approve ${money(order.amountKes)} for ${order.label}.`;
+          // The licence service follows the money; this only asks how it went.
+          polling = setInterval(async () => {
+            let r;
+            try { r = await rg.invoke('licence:buy-status', order.orderId); } catch (_) { return; }
+            if (r.status === 'pending') return;
+            clearInterval(polling); polling = null;
+            if (r.status === 'paid') {
+              setState(r.licence);
+              note.textContent = `Paid${r.receipt ? ` — M-Pesa ${r.receipt}` : ''}. Thank you.`;
+              App.toast('Licence active. Thank you.');
+              draw();
+            } else {
+              note.textContent = r.message || (r.status === 'cancelled' ? 'The payment was cancelled on the phone.' : 'The payment did not go through.');
+              pay.disabled = false;
+            }
+          }, 4000);
+        } catch (e) {
+          note.textContent = '';
+          App.toast(App.errorText(e), true);
+          pay.disabled = false;
+        }
+      };
+    };
+
+    draw();
+    rg.invoke('licence:prices').then((r) => { plans = (r && r.plans) || []; draw(); }).catch(() => draw());
+
+    d.q('[data-recheck]').onclick = async () => {
+      setState(await rg.invoke('licence:recheck').catch(() => st));
+      App.toast('Checked');
+      draw();
+    };
+    d.q('[data-close-btn]').onclick = () => { if (polling) clearInterval(polling); d.close(); };
+  };
 
   Dialogs.updates = async (opts) => {
     const st = await rg.invoke('updates:status');

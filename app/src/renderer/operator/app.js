@@ -51,6 +51,61 @@
     }
   };
 
+  // ---------- licence ----------
+  // Everything here is on the operator's screen. Nothing licensing does ever reaches the audience
+  // window, and no check is made while something is on it.
+  App.licence = { state: 'checking' };
+  let licenceBarHidden = false;
+
+  App.refreshLicence = async () => {
+    try {
+      App.licence = await rg.invoke('licence:status');
+    } catch (e) {
+      App.licence = { state: 'checking' };
+    }
+    App.showLicenceBar();
+    return App.licence;
+  };
+
+  /** Asked before the first thing of the morning goes live. Opens the licence box if it may not. */
+  App.licenceAllowsLive = async () => {
+    let answer;
+    try {
+      answer = await rg.invoke('licence:can-go-live');
+    } catch (e) {
+      return true; // never let a licence check be the reason a church cannot start
+    }
+    App.licence = answer.status;
+    App.showLicenceBar();
+    if (answer.allowed) return true;
+    Dialogs.licence({ blocked: true });
+    return false;
+  };
+
+  const LICENCE_WORDS = {
+    unlicensed: () => 'RG-Present needs a licence before it can put anything on the screen.',
+    trial_ended: () => 'The free trial has ended. A licence is needed to put anything on the screen.',
+    expired: (l) => `The licence ran out${l.paidUntil ? ` on ${new Date(l.paidUntil).toLocaleDateString()}` : ''}. Renew it to put anything on the screen.`,
+    grace: (l) => `Thank you for using RG-Present. It stays free on this computer for ${l.graceDaysLeft || 0} more day${l.graceDaysLeft === 1 ? '' : 's'}.`,
+    trial: (l) => `Free trial: ${l.daysLeft} day${l.daysLeft === 1 ? '' : 's'} left.`,
+    renewal_due: (l) => `The licence runs out in ${l.daysLeft} day${l.daysLeft === 1 ? '' : 's'}.`,
+  };
+
+  App.showLicenceBar = () => {
+    const bar = $('#licenceBar');
+    if (!bar) return;
+    const l = App.licence || {};
+    const words = LICENCE_WORDS[l.state];
+    const stopped = l.state === 'unlicensed' || l.state === 'trial_ended' || l.state === 'expired';
+    // Only worth saying when it is nearly over, or already is.
+    const worth = stopped || l.state === 'trial' || l.state === 'renewal_due' || (l.state === 'grace' && (l.graceDaysLeft || 0) <= 30);
+    bar.hidden = !words || !worth || (licenceBarHidden && !stopped);
+    bar.classList.toggle('stopped', stopped);
+    if (!bar.hidden) $('#licenceBarText').textContent = words(l);
+  };
+
+  App.dismissLicenceBar = () => { licenceBarHidden = true; App.showLicenceBar(); };
+
   App.uid = () => Math.random().toString(36).slice(2, 10);
   App.esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   App.langLabel = (code) => ({ en: 'EN', mer: 'KIM', sw: 'SW' }[code] || (code || '?').toUpperCase().slice(0, 3));
@@ -422,6 +477,10 @@
   }
 
   App.goLive = async (item, index, slide) => {
+    // The one thing a licence is allowed to stop: putting something on the screen when nothing is
+    // there yet. Once a service is under way (App.live is set) every later slide and item goes up
+    // untouched, whatever the licence says — a service is never interrupted half way through.
+    if (!App.live && !(await App.licenceAllowsLive())) return;
     musicStepsAside();
     // A "minutes from now" countdown restarts whenever it goes live.
     const target = item || (App.preview && App.preview.item);

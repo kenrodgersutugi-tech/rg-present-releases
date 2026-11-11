@@ -42,7 +42,7 @@
 
       <div class="prose">
         <p class="updated">
-          Last updated 5 November 2026. This policy covers the RG-Present software for Windows and
+          Last updated 11 November 2026. This policy covers the RG-Present software for Windows and
           this website.
         </p>
 
@@ -63,9 +63,9 @@
           <li>There are no accounts, no licence keys and no sign-in.</li>
           <li>There is no analytics, no tracking and no crash reporting.</li>
           <li>
-            Four things can leave your computer, and only in the circumstances set out below: the
-            update check, the web browser you choose to open, the optional AI helpers you choose to
-            turn on, and anything you export yourself.
+            Five things can leave your computer, and only in the circumstances set out below: the
+            licence, the update check, the web browser you choose to open, the optional AI helpers
+            you choose to turn on, and anything you export yourself.
           </li>
           <li>This website sets no cookies and has no trackers.</li>
         </ul>
@@ -94,7 +94,61 @@
 
         <h2 id="leaves">What leaves your computer</h2>
 
-        <h3>1. The update check</h3>
+        <h3>1. The licence</h3>
+        <p>
+          RG-Present needs a licence to put slides on the projector, so it talks to the RG Devs
+          licence service &mdash; the same one RG Dev POS and RG HotelOS use. It does so when you
+          start the trial, type in a key, pay for a plan, or when the licence is quietly renewed
+          (never while something is on the audience screen).
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>What is sent</th>
+              <th>Why</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>A code for this computer</td>
+              <td>
+                A one-way hash of the Windows installation id and the system disk serial. It cannot
+                be turned back into either, and it is the same code for every RG Devs product on
+                that computer, so a licence can be tied to one machine.
+              </td>
+            </tr>
+            <tr>
+              <td>The computer's name and the RG-Present version</td>
+              <td>So you can tell your machines apart when a licence has to be moved.</td>
+            </tr>
+            <tr>
+              <td>The licence key, when you type one in</td>
+              <td>To check it and sign the licence this computer then keeps.</td>
+            </tr>
+            <tr>
+              <td>Your church's name and M-Pesa number, when you buy</td>
+              <td>
+                To send the payment request to your phone and put a name on the licence. The number
+                is stored only in a masked form (07&hellip;123) beside the M-Pesa receipt.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <p>
+          Your songs, services, readings and media are never sent. Payment itself is handled by
+          <strong>Safaricom M-Pesa</strong>: you approve it on your own phone, we never see or
+          store your PIN, and Safaricom tells the licence service only that the payment succeeded
+          and its receipt number. Once the licence is on your computer it is checked there, so a
+          church with no internet keeps working.
+        </p>
+        <p>
+          The licence service is run by RG Devs on a database in Frankfurt, Germany (Neon,
+          eu-central-1). It keeps the licence key's fingerprint, the machine code, the masked phone
+          number, the M-Pesa receipt and the dates, for as long as the licence exists and for our
+          accounting afterwards.
+        </p>
+
+        <h3>2. The update check</h3>
         <p>
           RG-Present asks GitHub whether a newer version has been published, and downloads it if so.
           The request contains no information about you or your library. GitHub, as the host, will
@@ -107,7 +161,7 @@
           updating instead and RG-Present makes no update request of its own.
         </p>
 
-        <h3>2. The web browser</h3>
+        <h3>3. The web browser</h3>
         <p>
           The browser built into RG-Present only does anything when you open it. Searching uses
           <strong>DuckDuckGo</strong>, and any page you then visit is an ordinary visit to that
@@ -116,7 +170,7 @@
           library or your service.
         </p>
 
-        <h3>3. The optional AI helpers</h3>
+        <h3>4. The optional AI helpers</h3>
         <p>
           These do nothing at all until you put a Gemini API key of your own into Settings, and then
           only when you ask a question. When you do, the request goes directly from your computer to
@@ -171,7 +225,7 @@
           RG-Present depends on it.
         </p>
 
-        <h3>4. Anything you export yourself</h3>
+        <h3>5. Anything you export yourself</h3>
         <p>
           Printing a service, exporting your songs as a pack, or copying your data folder sends that
           material wherever you send it. That is your decision and your copy.
@@ -180,6 +234,7 @@
         <h2 id="notcollected">What we never collect</h2>
         <ul>
           <li>Nothing about the services you run, the songs you sing or the passages you read.</li>
+          <li>No M-Pesa PIN, and no full phone number beyond the masked form kept with the receipt.</li>
           <li>No names, addresses, phone numbers or membership records &mdash; RG-Present has no place to put them.</li>
           <li>No usage statistics, no &ldquo;anonymous&rdquo; analytics, no crash reports.</li>
           <li>No device identifiers, licences or machine fingerprints.</li>

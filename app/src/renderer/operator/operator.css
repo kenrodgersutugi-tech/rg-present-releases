@@ -414,6 +414,37 @@ body.file-drop::after {
 .web-live .btn:hover { background: rgba(255,255,255,.26); }
 @keyframes webpulse { 50% { opacity: .35; } }
 
+/* The licence strip. It sits on the operator's screen only; the audience window has no idea
+   licensing exists. Amber, because it is a thing to attend to, not a failure — red is reserved
+   for what is live. */
+.licence-bar {
+  position: fixed; left: 50%; bottom: 18px; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 10px; z-index: 59;
+  padding: 8px 10px 8px 14px; border-radius: 10px;
+  background: var(--panel); border: 1px solid var(--cue, #f5a524); color: var(--text);
+  box-shadow: 0 10px 30px rgba(0,0,0,.45); font-size: 13px; max-width: min(760px, 92vw);
+}
+.licence-bar[hidden] { display: none; }
+.licence-bar .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--cue, #f5a524); flex: 0 0 auto; }
+.licence-bar.stopped { border-color: var(--live); }
+.licence-bar.stopped .dot { background: var(--live); }
+.licence-bar .btn.ghost { background: transparent; }
+
+.licence-grid { display: grid; gap: 10px; }
+.licence-state { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.licence-state b { font-size: 15px; }
+.plan-row {
+  display: flex; align-items: center; gap: 10px; padding: 9px 12px;
+  border: 1px solid var(--line); border-radius: 8px; cursor: pointer; background: var(--panel);
+}
+.plan-row:hover { border-color: var(--accent, #6d4aff); }
+.plan-row.on { border-color: var(--accent, #6d4aff); box-shadow: 0 0 0 1px var(--accent, #6d4aff) inset; }
+/* The tick is the chosen plan, not a promise that every plan is already yours. */
+.plan-row i { opacity: .22; }
+.plan-row.on i { opacity: 1; color: var(--accent, #6d4aff); }
+.plan-row .amount { margin-left: auto; font-variant-numeric: tabular-nums; font-weight: 600; }
+.machine-code { font-family: ui-monospace, Consolas, monospace; font-size: 12px; color: var(--text-3); word-break: break-all; }
+
 .toast {
   position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); opacity: 0; pointer-events: none; z-index: 60;
   background: var(--text); color: var(--bg); padding: 9px 16px; border-radius: 10px; font-weight: 600; box-shadow: var(--shadow);

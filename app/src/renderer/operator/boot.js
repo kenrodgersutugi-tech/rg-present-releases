@@ -30,6 +30,8 @@
     themes: () => Dialogs.themes(),
     settings: () => Dialogs.settings(),
     help: () => App.openGuide(),
+    licence: () => Dialogs.licence(),
+    'licence-dismiss': () => App.dismissLicenceBar(),
     'toggle-output': async () => { App.settings = await rg.invoke('settings:set', { outputEnabled: !$('#btnOutput').classList.contains('on') }); },
     'toggle-stage': async () => { App.settings = await rg.invoke('settings:set', { stageEnabled: !$('#btnStage').classList.contains('on') }); },
     'ui-theme': async () => {
@@ -103,6 +105,9 @@
 
   // Last, so a slow or unreachable update server never delays the operator screen.
   setTimeout(() => Dialogs.autoCheckUpdates(), 2500);
+  // The licence strip appears only if there is something to say, and says it quietly.
+  setTimeout(() => App.refreshLicence(), 1200);
+  setInterval(() => App.refreshLicence(), 6 * 3600000);
 })().catch((e) => {
   console.error(e);
   document.body.insertAdjacentHTML('beforeend', `<pre style="position:fixed;inset:auto 20px 20px;padding:12px;background:#400;color:#fff;z-index:99">${String(e && e.stack || e)}</pre>`);

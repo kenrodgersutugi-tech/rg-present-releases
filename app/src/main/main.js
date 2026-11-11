@@ -11,6 +11,7 @@ const ai = require('./ai');
 const importers = require('./importers');
 const bibles = require('./bibles');
 const updater = require('./updater');
+const licence = require('./licence');
 
 const { paths } = store;
 // Dev/testing: run against a throwaway data folder without touching the real library.
@@ -297,6 +298,18 @@ function installUpdateOnQuit() {
   } catch (_) { /* keep the working version; the installer stays for next time */ }
 }
 
+/**
+ * Is the congregation looking at something right now? Licensing checks and renewals stand aside
+ * while they are, and nothing licensing does ever reaches the audience window.
+ */
+function somethingIsLive() {
+  if (!win.output || win.output.isDestroyed()) return false;
+  if (!lastOutput) return false;
+  if (lastOutput.mode === 'blank') return false;
+  if (lastOutput.cover === 'black') return false;
+  return true;
+}
+
 function registerIpc() {
   handle('app:info', () => ({
     appVersion: app.getVersion(),
@@ -309,6 +322,16 @@ function registerIpc() {
     website: WEBSITE,
     hasGuide: !!guidePdf(),
   }));
+
+  // ---- licensing (the shared RG Devs service; see src/main/licence.js) ----
+  handle('licence:status', () => licence.status());
+  handle('licence:recheck', async () => { await licence.readIdentity(true); return licence.status(); });
+  handle('licence:can-go-live', () => licence.canGoLive());
+  handle('licence:activate', (key) => licence.activate(key));
+  handle('licence:trial', () => licence.startTrial());
+  handle('licence:prices', () => licence.prices());
+  handle('licence:buy', (order) => licence.buy(order || {}));
+  handle('licence:buy-status', (orderId) => licence.buyStatus(orderId));
 
   // Opens one of the addresses above in the operator's own browser, by name.
   handle('app:open-link', (name) => {
@@ -804,6 +827,9 @@ async function offerRecovery(boot) {
 
 app.whenReady().then(async () => {
   store.ensureDirs();
+  // Before the database is opened, because opening it creates the file: this is how a church that
+  // was already using RG-Present is told apart from a fresh install (see licence.js).
+  licence.observeInstall();
   await db.open();
   await bibles.open();
   const installed = packs.installBundledPacks();
@@ -849,6 +875,11 @@ app.whenReady().then(async () => {
   const s = store.loadSettings();
   if (s.outputEnabled) createPresentationWindow('output');
   if (s.stageEnabled) createPresentationWindow('stage');
+
+  licence.start({
+    isLive: somethingIsLive,
+    log: (m) => { console.log(`[licence] ${m}`); db.log('licence', '', m); },
+  });
 
   // Last of all, and never in the way: the quiet update run.
   setTimeout(() => autoUpdateRun(), 8000);

@@ -172,6 +172,14 @@
     </section>
   </main>
 
+  <!-- Only when there is something to say about the licence, and never on the audience screen. -->
+  <div class="licence-bar" id="licenceBar" hidden>
+    <span class="dot"></span>
+    <span id="licenceBarText"></span>
+    <button class="btn" data-action="licence">Licence</button>
+    <button class="btn ghost" data-action="licence-dismiss" title="Hide this until RG-Present is opened again">Not now</button>
+  </div>
+
   <div class="web-live" id="webLive" hidden>
     <span class="dot"></span>
     <span>A web page is on the audience screen — the service is behind it.</span>

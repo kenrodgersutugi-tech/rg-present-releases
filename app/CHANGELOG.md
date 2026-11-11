@@ -5,6 +5,37 @@ App, database schema and content packs are versioned separately:
 - **Schema version**: `MIGRATIONS` in `src/main/db.js` (the library is backed up before every upgrade).
 - **Content pack versions**: each pack's `manifest.json`; see the pack's own `CHANGELOG.md`.
 
+## App 1.9.0 (2026-11-11)
+### RG-Present is now licensed
+- **Two weeks free on every computer**, with nothing held back. After that a licence is needed
+  before anything new goes on the audience screen.
+- **Churches already using RG-Present keep it free for 90 days** after this update reaches them,
+  so nobody is caught out on a Sunday by an update they did not ask for. It is granted once per
+  library and shown as a countdown on the operator screen.
+- **Pay with M-Pesa inside the program**: KES 300 for one Sunday (seven days), 700 a month,
+  7,000 a year, 30,000 for a lifetime licence. Choose a plan, approve the payment on the phone,
+  and the licence turns itself on. Closing the window does not lose it: RG-Present collects the
+  licence when the payment settles, even days later.
+- **Or type in a key** (RGPRS-XXXXX-XXXXX-XXXXX-XXXXX) for a licence bought from RG Devs.
+- A licence covers one computer and is checked **on that computer**, against a key built into the
+  app, so a church with no internet keeps working between renewals.
+
+### What a licence never does
+- **It never interrupts a service.** If a licence lapses while a hymn is on the screen, the
+  service carries on to the end; only the next thing to go up waits. No check, renewal or message
+  happens while anything is on the audience screen.
+- **It never touches the audience screen.** Everything licensing has to say is said on the
+  operator's screen.
+- **It never holds your work.** The library, editing songs, building, saving and printing the
+  order of service, the stage display and every import all keep working without a licence.
+- **Nothing is deleted, ever.**
+
+### Smaller
+- Settings shows the licence, and the new licence box is reachable from the strip at the bottom of
+  the operator screen.
+- The Microsoft Store copy is licensed with a key instead of paying in the app, because the Store
+  does not allow paying for digital goods inside an app.
+
 ## App 1.8.2 (2026-11-08)
 - **Store package only:** its display name is now **RG Present**, the name reserved in Partner
   Center. The Store will not take a package whose name is not reserved there, and the hyphenated
