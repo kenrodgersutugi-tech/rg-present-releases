@@ -1,7 +1,7 @@
 {
   "name": "rg-present",
   "productName": "RG-Present",
-  "version": "1.9.0",
+  "version": "1.9.1",
   "description": "Worship presentation software for Windows — hymns, Bibles, themes and dual-screen output.",
   "main": "src/main/main.js",
   "author": {
@@ -93,7 +93,8 @@
   },
   "devDependencies": {
     "electron": "^44.4.5",
-    "electron-builder": "^26.15.3"
+    "electron-builder": "^26.15.3",
+    "pg": "^8.23.1"
   },
   "allowScripts": {
     "electron-winstaller@5.4.0": true

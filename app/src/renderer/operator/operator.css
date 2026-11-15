@@ -443,6 +443,12 @@ body.file-drop::after {
 .plan-row i { opacity: .22; }
 .plan-row.on i { opacity: 1; color: var(--accent, #6d4aff); }
 .plan-row .amount { margin-left: auto; font-variant-numeric: tabular-nums; font-weight: 600; }
+.licence-fallback { border-top: 1px solid var(--line); padding-top: 10px; margin-top: 4px; }
+.licence-fallback summary { cursor: pointer; color: var(--text-2); font-size: 13px; }
+.licence-fallback summary:hover { color: var(--text); }
+.licence-fallback p { margin: 8px 0; font-size: 13px; line-height: 1.5; }
+.licence-fallback textarea { font-family: ui-monospace, Consolas, monospace; font-size: 12px; resize: vertical; }
+
 .machine-code { font-family: ui-monospace, Consolas, monospace; font-size: 12px; color: var(--text-3); word-break: break-all; }
 
 .toast {

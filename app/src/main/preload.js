@@ -15,7 +15,7 @@ const INVOKE = new Set([
   'ai:status', 'ai:background', 'ai:find-songs', 'ai:find-readings', 'ai:plan-service', 'ai:notes-to-slides',
   'decks:list', 'decks:import', 'decks:slides', 'decks:delete', 'decks:refresh',
   'web:open', 'web:close', 'web:navigate', 'web:back', 'web:forward', 'web:reload', 'web:state', 'web:show', 'web:hide', 'web:audience',
-  'licence:status', 'licence:recheck', 'licence:can-go-live', 'licence:activate', 'licence:trial',
+  'licence:status', 'licence:recheck', 'licence:can-go-live', 'licence:activate', 'licence:offline', 'licence:trial',
   'licence:prices', 'licence:buy', 'licence:buy-status',
   'bible:list', 'bible:structure', 'bible:chapter', 'bible:passage', 'bible:search', 'bible:remove', 'bible:pick', 'bible:install-pending',
 ]);

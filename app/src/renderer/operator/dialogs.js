@@ -1281,9 +1281,26 @@
         <span class="muted" id="lcPayNote"></span>
       </div>`;
 
+    /**
+     * When M-Pesa will not go through, or the church has no internet at all. Both ways out are
+     * here: pay to the till and be sent a key, or be sent a licence for this one computer that
+     * needs no connection whatsoever.
+     */
+    const fallback = () => `
+      <details class="licence-fallback"${opts.blocked ? ' open' : ''}>
+        <summary>M-Pesa not working, or no internet?</summary>
+        <p class="muted">Pay RG Devs on M-Pesa <b>Buy Goods till 1580813</b>, then send the M-Pesa message,
+        your church's name and the computer code below to <b>rgdev.ke@gmail.com</b>. You will be sent
+        either a licence key for the box above, or — if this computer has no internet at all — a
+        licence to paste in here:</p>
+        <label class="field full"><span>Licence sent by RG Devs</span>
+          <textarea id="lcOffline" rows="3" spellcheck="false" placeholder="Paste the whole licence here"></textarea></label>
+        <button class="btn" data-offline>Use this licence</button>
+      </details>`;
+
     const draw = () => {
       const storeCopy = st.storeBuild === true;
-      body.innerHTML = `${keyAndTrial()}${storeCopy ? storeWords() : plans.length || st.state !== 'checking' ? planList() : ''}`;
+      body.innerHTML = `${keyAndTrial()}${storeCopy ? storeWords() : plans.length || st.state !== 'checking' ? planList() : ''}${fallback()}`;
       RGIcons.hydrate(body);
 
       d.qa('[data-plan]').forEach((row) => (row.onclick = () => {
@@ -1319,6 +1336,22 @@
           App.toast(App.errorText(e), true);
         } finally {
           tb.disabled = false;
+        }
+      };
+
+      const off = d.q('[data-offline]');
+      if (off) off.onclick = async () => {
+        const text = (d.q('#lcOffline').value || '').trim();
+        if (!text) return App.toast('Paste the licence RG Devs sent you', true);
+        off.disabled = true;
+        try {
+          setState(await rg.invoke('licence:offline', text));
+          App.toast('Licence accepted. Thank you.');
+          draw();
+        } catch (e) {
+          App.toast(App.errorText(e), true);
+        } finally {
+          off.disabled = false;
         }
       };
 
@@ -1358,6 +1391,7 @@
       };
     };
 
+    setState(st);
     draw();
     rg.invoke('licence:prices').then((r) => { plans = (r && r.plans) || []; draw(); }).catch(() => draw());
 

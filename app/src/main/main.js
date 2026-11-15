@@ -328,6 +328,7 @@ function registerIpc() {
   handle('licence:recheck', async () => { await licence.readIdentity(true); return licence.status(); });
   handle('licence:can-go-live', () => licence.canGoLive());
   handle('licence:activate', (key) => licence.activate(key));
+  handle('licence:offline', (token) => licence.activateOffline(token));
   handle('licence:trial', () => licence.startTrial());
   handle('licence:prices', () => licence.prices());
   handle('licence:buy', (order) => licence.buy(order || {}));

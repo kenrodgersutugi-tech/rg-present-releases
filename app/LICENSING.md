@@ -57,6 +57,50 @@ licence even if the window was closed, because the pending order is kept on disk
 
 **The Microsoft Store copy cannot pay in the app** (Store policy 10.8.1), so it asks for a key.
 
+## When M-Pesa fails
+
+Two ways out, both reachable from **Settings → Licence → "M-Pesa not working, or no internet?"**
+in the church's own copy. That panel shows them the till number, the address to write to, and the
+**computer code** for the machine in front of them.
+
+| The church has | Send them | They do |
+| --- | --- | --- |
+| Internet, but M-Pesa refused | a **licence key** | type it into the box above the panel |
+| No internet at all | an **offline licence** | paste it into the panel |
+
+An offline licence is the signed licence itself, made for one computer: it is checked against the
+key built into the app, so it needs no connection at either end. Sent to a different church it
+does nothing — the app refuses a licence whose computer code is not its own, and also refuses one
+for another RG Devs product, one that has run out, and one that has been edited by so much as a
+character.
+
+Both come from the same tool. Set `DATABASE_URL` to the licensing project first, and keep it out
+of scripts, shell history and screenshots — anyone holding it can mint licences for every RG Devs
+product.
+
+```bash
+export DATABASE_URL='postgres://…@….neon.tech/neondb?sslmode=require'
+
+# A key, for a church that can get online once
+node tools/issue-licence.js key --church "St Paul's, Meru" --days 365
+node tools/issue-licence.js key --church "St Paul's, Meru" --lifetime
+
+# A licence for one computer, for a church with no internet. The 64-character code is the one
+# on their licence screen; they read it to you over the phone.
+node tools/issue-licence.js offline --church "St Paul's, Meru" --days 120 \
+  --fingerprint 894e891ff5f49dea6cb304160d1485f498909f620b98c0f6bd1d45c3da7257a6
+
+# What has this church got?
+node tools/issue-licence.js who --church "St Paul"
+
+# They have bought a new laptop: free the slot, then they use the same key on it
+node tools/issue-licence.js free --hint V7G7R
+```
+
+An offline licence is recorded like any other, so the church appears in `who` and can be looked
+after later. The signing key is read from the database for the instant it takes to sign and is
+never written anywhere.
+
 ## Issuing a key by hand
 
 Everything below is run against the licensing project — Neon's SQL editor, or the Neon MCP tools.
@@ -122,6 +166,12 @@ rows deleted afterwards:
 - a fresh install is `unlicensed` and cannot go live; a library that predates the build gets its
   90 days and can;
 - with something already live, a refused licence does not take it off the screen.
+
+The offline path was exercised the same day with a throwaway signing key (the app trusts a second
+public key only when it is not packaged, so a release cannot be fooled this way): it refuses a
+licence for another computer, for another product, one that has expired, one with a single
+character changed, and plain nonsense — and accepts a good one, after which the machine may go
+live.
 
 **Do not test with a real church's key.** Make a `ZZ Test …` business, use it, and delete the
 rows when finished.

@@ -129,9 +129,16 @@ function readIdentity(fresh = false) {
 
 // ──────────────────────────────────────────────────────────── the token
 
-const keyObjects = PUBLIC_KEYS.map((raw) =>
-  createPublicKey({ key: { kty: 'OKP', crv: 'Ed25519', x: Buffer.from(raw, 'base64').toString('base64url') }, format: 'jwk' }),
-);
+const publicKeyFromRaw = (raw) =>
+  createPublicKey({ key: { kty: 'OKP', crv: 'Ed25519', x: Buffer.from(raw, 'base64').toString('base64url') }, format: 'jwk' });
+
+const keyObjects = PUBLIC_KEYS.map(publicKeyFromRaw);
+
+// Development and testing only, and impossible in a release: a second key to trust, so the offline
+// path can be exercised without the real signing key ever leaving the licensing database.
+if (!app.isPackaged && process.env.RG_LICENCE_EXTRA_PUBKEY) {
+  try { keyObjects.push(publicKeyFromRaw(process.env.RG_LICENCE_EXTRA_PUBKEY)); } catch (_) { /* ignore a bad one */ }
+}
 
 /** Signature only. Says nothing about product, expiry or which machine. */
 function verifyToken(token) {
@@ -387,6 +394,61 @@ async function startTrial() {
   return status();
 }
 
+/**
+ * Licensing a computer that cannot reach the licence service at all — the church has no internet,
+ * or M-Pesa is refusing, and RG Devs has sent them a licence by email or on a flash drive.
+ *
+ * RG Devs mints it for this exact computer (`tools/issue-licence.js offline`), so a licence sent to
+ * one church does nothing on another machine. It is checked here the same way every other licence
+ * is: the signature against the key built into the app, then the product, then the fingerprint.
+ */
+async function activateOffline(text) {
+  const token = String(text || '').trim().replace(/\s+/g, '');
+  if (!token) {
+    const e = new Error('Paste the licence RG Devs sent you.');
+    e.code = 'bad_token';
+    throw e;
+  }
+  const claims = verifyToken(token);
+  if (!claims) {
+    const e = new Error('That licence is not one RG Devs issued, or it was damaged on the way here. Ask for it again, and paste the whole of it.');
+    e.code = 'bad_token';
+    throw e;
+  }
+  if (claims.product !== PRODUCT) {
+    const e = new Error('That licence is for another RG Devs product, not RG-Present.');
+    e.code = 'wrong_product';
+    throw e;
+  }
+  const id = await readIdentity();
+  if (!id.fingerprint) {
+    const e = new Error("This computer's id could not be read yet. Windows may still be starting: wait a minute and try again.");
+    e.code = 'machine_id';
+    throw e;
+  }
+  if (claims.fp !== id.fingerprint) {
+    const e = new Error('That licence was made for a different computer. Send RG Devs the computer code shown below and ask for one for this machine.');
+    e.code = 'other_machine';
+    throw e;
+  }
+  if (claims.exp * 1000 <= Date.now()) {
+    const e = new Error('That licence has already run out. Ask RG Devs for a current one.');
+    e.code = 'expired';
+    throw e;
+  }
+  const previous = readStored() || {};
+  writeStored({
+    ...previous,
+    key: previous.key || '',
+    token,
+    offline: true,
+    lastRenewalAttemptAt: new Date().toISOString(), lastRenewalError: null,
+    guidHash: partHash(id.guid), diskHash: partHash(id.disk),
+  });
+  log('licence: activated from a licence sent by RG Devs (no internet needed)');
+  return status();
+}
+
 async function prices() {
   // Showing what a plan costs is fine in any build; only taking the money inside a Store copy is not.
   const { status: code, body } = await service(`/prices?product=${PRODUCT}`);
@@ -458,6 +520,9 @@ async function buyStatus(orderId) {
 async function renewIfDue(force = false) {
   const stored = readStored();
   if (!stored || !stored.token) return;
+  // A licence sent by RG Devs for a computer with no internet has no key to renew with: it simply
+  // runs to its own end, and RG Devs sends another.
+  if (stored.offline && !stored.key) return;
   if (!force && isLive()) return;
   const st = await status();
   if (st.state === 'unlicensed' || st.state === 'checking') return;
@@ -501,7 +566,7 @@ function stop() {
 
 module.exports = {
   PRODUCT, SERVICE_URL, KEY_RE, GRACE_DAYS, observeInstall, isStoreBuild,
-  status, canGoLive, activate, startTrial, prices, buy, buyStatus,
+  status, canGoLive, activate, activateOffline, startTrial, prices, buy, buyStatus,
   renewIfDue, checkPendingOrders, start, stop,
   readIdentity, verifyToken, fingerprintOf,
 };

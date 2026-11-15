@@ -5,6 +5,15 @@ App, database schema and content packs are versioned separately:
 - **Schema version**: `MIGRATIONS` in `src/main/db.js` (the library is backed up before every upgrade).
 - **Content pack versions**: each pack's `manifest.json`; see the pack's own `CHANGELOG.md`.
 
+## App 1.9.1 (2026-11-15)
+- **A way through when M-Pesa will not go through.** The licence box has a new panel, *M-Pesa not
+  working, or no internet?*, with the till number, where to write, and this computer's code. RG
+  Devs sends back either a licence key as before, or — for a church with no internet at all — a
+  **licence for that one computer**, which is pasted straight in and needs no connection at either
+  end.
+- An offline licence is refused if it was made for another computer, for another RG Devs product,
+  if it has run out, or if a single character of it has been changed.
+
 ## App 1.9.0 (2026-11-11)
 ### RG-Present is now licensed
 - **Two weeks free on every computer**, with nothing held back. After that a licence is needed
