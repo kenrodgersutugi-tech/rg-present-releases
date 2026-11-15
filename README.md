@@ -57,6 +57,17 @@ no edit.
 cd app && xvfb-run -a npx electron ../tools/make-guide-pdf.js   # on Windows: npx electron ..\tools\make-guide-pdf.js
 ```
 
+## Licensing
+
+RG-Present is licensed through the shared RG Devs licence service, the same one RG Dev POS and
+RG HotelOS use. [`app/LICENSING.md`](app/LICENSING.md) has the prices, how to issue a key by hand,
+how to move a licence to another computer, and what the app does in each state.
+
+The short version: two weeks free on every computer, 90 free days for a church that was already
+using RG-Present before licensing began, and KES 300 / 700 / 7,000 / 30,000 after that. A licence
+can stop something new going on the projector. It can do nothing else — a service already running
+is never interrupted, and nothing is ever deleted.
+
 ## About
 
 RG-Present is church presentation software made by **RG Devs** in Kenya. Report a problem
